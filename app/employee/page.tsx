@@ -4,17 +4,24 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Shield, Wallet, Loader2, CheckCircle, ChevronRight, X, ChevronLeft, User, Lock, Eye, EyeOff, LogOut } from 'lucide-react';
 
-declare global { interface Window { cardano?: any; } }
+declare global {
+  interface Window {
+    cardano?: {
+      lace?: any;
+      eternl?: any;
+    };
+  }
+}
 
 export default function EmployeePage() {
   const [walletConnected, setWalletConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
+  const [connectedWalletName, setConnectedWalletName] = useState<'Lace' | 'Eternl' | ''>('');
   
-  // 隱私控制
+  const [showWalletModal, setShowWalletModal] = useState(false);
   const [showBalance, setShowBalance] = useState(false);
 
-  // Modal 與 列表狀態
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [verificationStep, setVerificationStep] = useState(0);
   const [records, setRecords] = useState([
@@ -22,26 +29,29 @@ export default function EmployeePage() {
     { id: '2', date: '2025-11', amount: '********', status: 'pending', hash: 'zk-3b2e...1a4f' },
   ]);
 
-  const handleConnect = async () => {
+  const connectWallet = async (walletName: 'lace' | 'eternl') => {
     setIsConnecting(true);
+    setShowWalletModal(false);
+
     if (typeof window === 'undefined') return;
-    if (!window.cardano || !window.cardano.lace) {
-        alert("❌ 未偵測到 Lace 錢包！請先安裝插件。");
+    if (!window.cardano || !window.cardano[walletName]) {
+        alert(`❌ 未偵測到 ${walletName === 'lace' ? 'Lace' : 'Eternl'} 錢包！\n請先安裝瀏覽器擴充功能。`);
         setIsConnecting(false);
         return;
     }
+
     try {
-      const api = await window.cardano.lace.enable();
-      const networkId = await api.getNetworkId();
+      const api = await window.cardano[walletName].enable();
+      await api.getNetworkId();
       
-      // 隱私優化：對地址進行遮罩
-      const rawAddress = "addr_test1...8Xj9"; 
-      const maskedAddress = `${rawAddress.slice(0, 9)}...${rawAddress.slice(-4)}`;
+      const rawAddress = walletName === 'lace' ? "addr_test1...Lace" : "addr_test1...Eternl"; 
+      const maskedAddress = `${rawAddress.slice(0, 9)}...${rawAddress.slice(-6)}`;
       
       setWalletAddress(maskedAddress);
+      setConnectedWalletName(walletName === 'lace' ? 'Lace' : 'Eternl');
       setWalletConnected(true);
     } catch (error) {
-      alert("⚠️ 連接失敗！");
+      alert("⚠️ 用戶拒絕授權或連接失敗！");
     } finally {
       setIsConnecting(false);
     }
@@ -50,7 +60,7 @@ export default function EmployeePage() {
   const handleDisconnect = () => {
     setWalletConnected(false);
     setWalletAddress('');
-    // 斷開時可以選擇是否清空列表，這裡為了演示保留列表但重置狀態
+    setConnectedWalletName('');
     alert("已安全斷開連接，並清除本地暫存數據。");
   };
 
@@ -81,7 +91,6 @@ export default function EmployeePage() {
           </div>
 
           <div className="flex items-center gap-3">
-             {/* 安全徽章 */}
              {!walletConnected && (
                 <div className="hidden md:flex items-center gap-1 text-[10px] text-green-400 bg-green-400/10 px-2 py-1 rounded border border-green-400/20">
                   <Lock className="w-3 h-3" />
@@ -91,23 +100,21 @@ export default function EmployeePage() {
              
              {walletConnected ? (
                 <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold bg-slate-800 border border-slate-600 text-slate-300 cursor-default">
+                    <button className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold border text-slate-200 cursor-default ${connectedWalletName === 'Eternl' ? 'bg-orange-900/30 border-orange-500/30' : 'bg-cyan-900/30 border-cyan-500/30'}`}>
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                        {walletAddress}
+                        {connectedWalletName}: {walletAddress}
                     </button>
-                    {/* 斷開按鈕 */}
                     <button onClick={handleDisconnect} className="p-2 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition" title="Disconnect">
                         <LogOut className="w-4 h-4" />
                     </button>
                 </div>
              ) : (
                 <button 
-                    onClick={handleConnect}
-                    disabled={walletConnected}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all ${walletConnected ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}`}
+                    onClick={() => setShowWalletModal(true)}
+                    className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all bg-indigo-600 hover:bg-indigo-500 text-white"
                 >
                     {isConnecting ? <Loader2 className="animate-spin w-4 h-4" /> : <Wallet className="w-4 h-4" />}
-                    Connect Lace
+                    Connect Wallet
                 </button>
              )}
           </div>
@@ -159,7 +166,23 @@ export default function EmployeePage() {
             </div>
         </div>
 
-        {/* Verification Modal */}
+        {showWalletModal && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
+                    <button onClick={() => setShowWalletModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5"/></button>
+                    <h3 className="text-xl font-bold text-white mb-6 text-center">Connect Wallet</h3>
+                    <div className="space-y-4">
+                        <button onClick={() => connectWallet('lace')} className="w-full flex items-center justify-between bg-slate-800 hover:bg-cyan-900/30 border border-slate-700 hover:border-cyan-500/50 p-4 rounded-xl transition-all group">
+                            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center text-white font-bold text-lg">L</div><div className="text-left"><div className="text-white font-bold group-hover:text-cyan-400">Lace Wallet</div><div className="text-xs text-slate-500">IOG Official</div></div></div><ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-cyan-400"/>
+                        </button>
+                        <button onClick={() => connectWallet('eternl')} className="w-full flex items-center justify-between bg-slate-800 hover:bg-orange-900/30 border border-slate-700 hover:border-orange-500/50 p-4 rounded-xl transition-all group">
+                            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-lg">E</div><div className="text-left"><div className="text-white font-bold group-hover:text-orange-400">Eternl Wallet</div><div className="text-xs text-slate-500">Community Favorite</div></div></div><ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-orange-400"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
         {verifyingId && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                 <div className="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl p-6 shadow-2xl relative ring-1 ring-white/10">

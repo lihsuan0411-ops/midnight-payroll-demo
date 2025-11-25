@@ -2,51 +2,77 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Shield, Wallet, Loader2, Lock, Terminal, Building2, ChevronLeft, CheckCircle } from 'lucide-react';
+import { Shield, Wallet, Loader2, Lock, Terminal, Building2, ChevronLeft, CheckCircle, LogOut, X, ChevronRight } from 'lucide-react';
 
-// 定義 window.cardano 類型
-declare global { interface Window { cardano?: any; } }
+declare global {
+  interface Window {
+    cardano?: {
+      lace?: any;
+      eternl?: any;
+    };
+  }
+}
 
 export default function EmployerPage() {
   const [walletConnected, setWalletConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
+  const [connectedWalletName, setConnectedWalletName] = useState<'Lace' | 'Eternl' | ''>('');
+  
+  const [showWalletModal, setShowWalletModal] = useState(false);
   const [status, setStatus] = useState<'idle' | 'processing' | 'success'>('idle');
   const [logs, setLogs] = useState<string[]>([]);
 
-  const handleConnect = async () => {
+  const connectWallet = async (walletName: 'lace' | 'eternl') => {
     setIsConnecting(true);
+    setShowWalletModal(false);
+
     if (typeof window === 'undefined') return;
-    if (!window.cardano || !window.cardano.lace) {
-        alert("❌ 未偵測到 Lace 錢包！請先安裝插件。");
+    if (!window.cardano || !window.cardano[walletName]) {
+        alert(`❌ 未偵測到 ${walletName === 'lace' ? 'Lace' : 'Eternl'} 錢包！\n請先安裝瀏覽器擴充功能。`);
         setIsConnecting(false);
         return;
     }
+
     try {
-      const api = await window.cardano.lace.enable();
-      const networkId = await api.getNetworkId();
-      const netName = networkId === 0 ? "Testnet" : "Mainnet";
-      setWalletAddress(`Lace Wallet (${netName})`);
+      const api = await window.cardano[walletName].enable();
+      await api.getNetworkId(); // 僅讀取 ID 以確認連接
+      
+      const rawAddress = walletName === 'lace' ? "addr_test1...OwnerLace" : "addr_test1...OwnerEternl"; 
+      const maskedAddress = `${rawAddress.slice(0, 9)}...${rawAddress.slice(-6)}`;
+      
+      setWalletAddress(maskedAddress);
+      setConnectedWalletName(walletName === 'lace' ? 'Lace' : 'Eternl');
       setWalletConnected(true);
     } catch (error) {
-      alert("⚠️ 連接失敗！");
+      alert("⚠️ 用戶拒絕授權或連接失敗！");
     } finally {
       setIsConnecting(false);
     }
   };
 
+  const handleDisconnect = () => {
+    setWalletConnected(false);
+    setWalletAddress('');
+    setConnectedWalletName('');
+    setLogs([]);
+    setStatus('idle');
+    alert("已斷開連接，並清除本次操作紀錄。");
+  };
+
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
     if (!walletConnected) {
-        alert("請先連接 Lace 錢包！");
+        alert("🔒 請先連接錢包以授權交易簽名！");
         return;
     }
     setStatus('processing');
     setLogs([]);
     const steps = [
-        "Initializing ZK-Circuit...",
-        "Encrypting salary amount (Homomorphic Enc)...",
+        "Initializing Midnight ZK-Circuit...",
+        "Encrypting salary amount (Homomorphic Encryption)...",
         "Generating ZK-Proof (Groth16)...",
+        `Requesting signature from ${connectedWalletName} Wallet...`,
         "Submitting transaction to Midnight Network...",
         "Transaction Confirmed! Block #48291"
     ];
@@ -60,7 +86,6 @@ export default function EmployerPage() {
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans">
-      {/* Navbar */}
       <nav className="border-b border-slate-800 bg-[#0f172a]/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 h-16 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -68,14 +93,35 @@ export default function EmployerPage() {
             <Shield className="text-cyan-400 w-6 h-6" />
             <span className="font-bold text-lg text-white">Employer Portal</span>
           </div>
-          <button 
-            onClick={handleConnect}
-            disabled={walletConnected}
-            className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all ${walletConnected ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-cyan-600 hover:bg-cyan-500 text-white'}`}
-          >
-            {isConnecting ? <Loader2 className="animate-spin w-4 h-4" /> : <Wallet className="w-4 h-4" />}
-            {walletConnected ? walletAddress : 'Connect Lace'}
-          </button>
+          
+          <div className="flex items-center gap-3">
+             {!walletConnected && (
+                <div className="hidden md:flex items-center gap-1 text-[10px] text-green-400 bg-green-400/10 px-2 py-1 rounded border border-green-400/20">
+                  <Lock className="w-3 h-3" />
+                  <span>Secure Connection</span>
+                </div>
+             )}
+             
+             {walletConnected ? (
+                <div className="flex items-center gap-2">
+                    <button className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold border text-slate-200 cursor-default ${connectedWalletName === 'Eternl' ? 'bg-orange-900/30 border-orange-500/30' : 'bg-cyan-900/30 border-cyan-500/30'}`}>
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        {connectedWalletName}: {walletAddress}
+                    </button>
+                    <button onClick={handleDisconnect} className="p-2 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition" title="Disconnect">
+                        <LogOut className="w-4 h-4" />
+                    </button>
+                </div>
+             ) : (
+                <button 
+                    onClick={() => setShowWalletModal(true)}
+                    className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all bg-cyan-600 hover:bg-cyan-500 text-white"
+                >
+                    {isConnecting ? <Loader2 className="animate-spin w-4 h-4" /> : <Wallet className="w-4 h-4" />}
+                    Connect Wallet
+                </button>
+             )}
+          </div>
         </div>
       </nav>
 
@@ -122,6 +168,23 @@ export default function EmployerPage() {
             </div>
           </div>
         </div>
+
+        {showWalletModal && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
+                    <button onClick={() => setShowWalletModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5"/></button>
+                    <h3 className="text-xl font-bold text-white mb-6 text-center">Connect Wallet</h3>
+                    <div className="space-y-4">
+                        <button onClick={() => connectWallet('lace')} className="w-full flex items-center justify-between bg-slate-800 hover:bg-cyan-900/30 border border-slate-700 hover:border-cyan-500/50 p-4 rounded-xl transition-all group">
+                            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center text-white font-bold text-lg">L</div><div className="text-left"><div className="text-white font-bold group-hover:text-cyan-400">Lace Wallet</div><div className="text-xs text-slate-500">IOG Official</div></div></div><ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-cyan-400"/>
+                        </button>
+                        <button onClick={() => connectWallet('eternl')} className="w-full flex items-center justify-between bg-slate-800 hover:bg-orange-900/30 border border-slate-700 hover:border-orange-500/50 p-4 rounded-xl transition-all group">
+                            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-lg">E</div><div className="text-left"><div className="text-white font-bold group-hover:text-orange-400">Eternl Wallet</div><div className="text-xs text-slate-500">Community Favorite</div></div></div><ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-orange-400"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
       </main>
     </div>
   );
