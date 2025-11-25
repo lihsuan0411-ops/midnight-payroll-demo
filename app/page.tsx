@@ -1,78 +1,69 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Shield, Wallet, Building2, User, ChevronRight, CheckCircle, 
   Lock, Terminal, Activity, FileText, Globe, Server, Eye, EyeOff, 
-  Download, Loader2, X, ChevronLeft, LogOut, Code, Cpu, GitMerge, Layers
+  Download, Loader2, X, ChevronLeft, LogOut, Calculator, LogIn
 } from 'lucide-react';
+import { jsPDF } from "jspdf";
+import autoTable from 'jspdf-autotable';
 
-// --- TypeScript 定義 ---
+// --- 1. TypeScript 定義修復 ---
 declare global {
   interface Window {
-    cardano?: any; // 修改：直接設為 any，徹底解決紅字問題
+    cardano?: any;
   }
 }
 
 type UserRole = 'landing' | 'employer' | 'employee';
 type WalletType = 'lace' | 'eternl' | '';
 
-// --- 模擬數據 ---
+// --- 2. 模擬數據 ---
 const EMPLOYEES = [
-  { id: 1, name: "Alice (Senior Dev)", address: "addr_test1...Alice", level: "L3", base: 75000, allowance: 5000 },
-  { id: 2, name: "Bob (Product Lead)", address: "addr_test1...Bob", level: "L4", base: 90000, allowance: 8000 },
-  { id: 3, name: "Charlie (Designer)", address: "addr_test1...Charlie", level: "L2", base: 55000, allowance: 3000 },
+  { id: "emp01", name: "Alice", title: "Senior Dev", address: "addr_test1...Alice", base: 75000, allowance: 5000 },
+  { id: "emp02", name: "Bob", title: "Product Lead", address: "addr_test1...Bob", base: 90000, allowance: 8000 },
+  { id: "emp03", name: "Charlie", title: "Designer", address: "addr_test1...Charlie", base: 55000, allowance: 3000 },
 ];
 
-const MOCK_PAYSLIPS = [
+const PAYROLL_DB = [
   { 
-    id: 101, period: '2025-10', status: 'Settled', amount: 88000, hash: 'zk-7f...9c',
-    breakdown: { base: 75000, allowance: 5000, bonus: 8000 } 
+    id: 101, empId: "emp01", period: '2025-10', status: 'Settled', hash: 'zk-7f...9c',
+    details: { base: 75000, allowance: 5000, bonus: 8000, labor: 1875, health: 1125, tax: 4300, net: 80700 }
   },
   { 
-    id: 102, period: '2025-11', status: 'Pending', amount: 0, hash: 'zk-3b...1a',
-    breakdown: { base: 75000, allowance: 5000, bonus: 0 }
+    id: 102, empId: "emp01", period: '2025-11', status: 'Pending', hash: 'zk-3b...1a',
+    details: { base: 75000, allowance: 5000, bonus: 0, labor: 1875, health: 1125, tax: 3900, net: 73100 }
+  },
+  { 
+    id: 201, empId: "emp02", period: '2025-11', status: 'Pending', hash: 'zk-9a...2b',
+    details: { base: 90000, allowance: 8000, bonus: 0, labor: 2250, health: 1350, tax: 4720, net: 89680 }
   },
 ];
 
+// --- 主程式 ---
 export default function OnChainPayrollApp() {
   const [currentView, setCurrentView] = useState<UserRole>('landing');
+  
+  // 狀態提升至頂層，確保切換頁面不中斷
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletType, setWalletType] = useState<WalletType>('');
   const [walletAddress, setWalletAddress] = useState('');
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  // 技術文檔 Modal 狀態
-  const [showTechModal, setShowTechModal] = useState(false);
 
-  // --- 連接邏輯 (已修復紅字) ---
   const connectWallet = async (type: WalletType) => {
     setIsConnecting(true);
     setShowWalletModal(false);
-
     if (typeof window === 'undefined') return;
-
-    // 這裡使用 window.cardano 就不會再報錯了，因為我們上面定義它是 any
-    if (!window.cardano || !window.cardano[type]) {
-      alert(`❌ 未偵測到 ${type === 'lace' ? 'Lace' : 'Eternl'} 錢包！`);
-      setIsConnecting(false);
-      return;
-    }
-
-    try {
-      const api = await window.cardano[type].enable();
-      await api.getNetworkId();
-      
-      // 為了演示美觀，這裡顯示模擬地址，實際開發可用 api.getUsedAddresses()
+    
+    // 模擬連接成功
+    setTimeout(() => {
       setWalletAddress(type === 'lace' ? "addr_test1...LaceUser" : "addr_test1...EternlUser");
       setWalletType(type);
       setWalletConnected(true);
-    } catch (error) { 
-      console.error(error);
-      alert("連接失敗或用戶拒絕"); 
-    } finally { 
-      setIsConnecting(false); 
-    }
+      setIsConnecting(false);
+    }, 800);
   };
 
   const disconnectWallet = () => {
@@ -111,9 +102,9 @@ export default function OnChainPayrollApp() {
         </div>
       </nav>
 
+      {/* Main Content */}
       <main className="relative z-10">
-        {currentView === 'landing' && <LandingView onNavigate={setCurrentView} onOpenTech={() => setShowTechModal(true)} />}
-        {/* 傳遞必要的 props 給子組件 */}
+        {currentView === 'landing' && <LandingView onNavigate={setCurrentView} />}
         {currentView === 'employer' && <EmployerView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} />}
         {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} />}
       </main>
@@ -131,57 +122,12 @@ export default function OnChainPayrollApp() {
           </div>
         </div>
       )}
-
-      {/* Technical Docs Modal */}
-      {showTechModal && <TechnicalDocsModal onClose={() => setShowTechModal(false)} />}
     </div>
   );
 }
 
-// --- Technical Docs Modal (保持不變，僅確保整合在同一文件) ---
-function TechnicalDocsModal({ onClose }: { onClose: () => void }) {
-  const [activeTab, setActiveTab] = useState<'arch' | 'zk' | 'contract' | 'flow'>('arch');
-
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in fade-in zoom-in duration-300">
-      <div className="bg-[#0f172a] border border-slate-700 w-full max-w-4xl h-[80vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-        <div className="bg-slate-800 p-4 flex justify-between items-center border-b border-slate-700">
-          <div className="flex items-center gap-3"><div className="p-2 bg-indigo-500/20 rounded-lg"><Code className="w-5 h-5 text-indigo-400"/></div><div><h3 className="text-xl font-bold text-white">Technical Architecture</h3><p className="text-xs text-slate-400">Midnight Compact + Cardano Aiken</p></div></div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white bg-white/5 p-2 rounded-full transition"><X className="w-5 h-5"/></button>
-        </div>
-        <div className="flex border-b border-slate-700 bg-slate-900/50">
-          {[{ id: 'arch', label: 'Architecture', icon: Layers }, { id: 'zk', label: 'ZK Circuit (Compact)', icon: Cpu }, { id: 'contract', label: 'Validator (Aiken)', icon: Shield }, { id: 'flow', label: 'User Flow', icon: GitMerge }].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all ${activeTab === tab.id ? 'text-cyan-400 border-b-2 border-cyan-400 bg-cyan-900/10' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'}`}><tab.icon className="w-4 h-4"/> {tab.label}</button>
-          ))}
-        </div>
-        <div className="flex-1 overflow-y-auto p-8 bg-[#0b1120]">
-          {activeTab === 'arch' && (
-            <div className="space-y-8">
-              <div className="text-center mb-8"><h4 className="text-2xl font-bold text-white mb-2">Dual-Layer Model</h4><p className="text-slate-400">Separating Privacy (Computation) from Assets (Settlement)</p></div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center relative">
-                <div className="border border-indigo-500/30 bg-indigo-900/10 p-6 rounded-2xl text-center relative"><div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-500 text-white px-3 py-1 rounded-full text-xs font-bold">Model & Proof</div><Cpu className="w-12 h-12 text-indigo-400 mx-auto mb-4" /><h5 className="text-lg font-bold text-white">Midnight Network</h5><p className="text-xs text-slate-400 mt-2">Private Smart Contracts (Compact)</p></div>
-                <div className="flex flex-col items-center justify-center text-slate-500"><div className="w-full h-px bg-slate-700 relative top-3"></div><div className="z-10 bg-[#0b1120] px-4 py-2 border border-orange-500/30 rounded-xl text-center"><Globe className="w-6 h-6 text-orange-400 mx-auto mb-1"/><span className="text-xs font-bold text-orange-300">Relay Oracle</span></div></div>
-                <div className="border border-cyan-500/30 bg-cyan-900/10 p-6 rounded-2xl text-center relative"><div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-600 text-white px-3 py-1 rounded-full text-xs font-bold">Settlement</div><Shield className="w-12 h-12 text-cyan-400 mx-auto mb-4" /><h5 className="text-lg font-bold text-white">Cardano L1</h5><p className="text-xs text-slate-400 mt-2">Settlement Validators (Aiken)</p></div>
-              </div>
-            </div>
-          )}
-          {activeTab === 'zk' && (
-            <div><div className="mb-6"><h4 className="text-xl font-bold text-white">Midnight Compact Circuit</h4></div><div className="bg-[#1e1e1e] p-6 rounded-xl border border-slate-700 font-mono text-sm overflow-x-auto shadow-inner"><div className="text-gray-400 mb-2">// midnight_payroll.compact</div><div className="text-purple-400">export circuit</div> <span className="text-yellow-300">pay_employee</span>...</div></div>
-          )}
-          {activeTab === 'contract' && (
-            <div><div className="mb-6"><h4 className="text-xl font-bold text-white">Cardano Settlement Validator</h4></div><div className="bg-[#1e1e1e] p-6 rounded-xl border border-slate-700 font-mono text-sm overflow-x-auto shadow-inner"><div className="text-gray-400 mb-2">// validators/settlement.aiken</div><span className="text-purple-400">validator</span> &#123; ... &#125;</div></div>
-          )}
-          {activeTab === 'flow' && (
-            <div className="flex flex-col gap-8 relative"><div className="absolute left-[23px] top-8 bottom-8 w-0.5 bg-gradient-to-b from-cyan-500 to-indigo-500 opacity-30"></div>{[ { title: "1. HR Input", desc: "Employer selects employee...", role: "Off-chain" }, { title: "2. Privacy Computation", desc: "Midnight Compact Contract verifies logic...", role: "Midnight Layer" }, { title: "3. Proof Generation", desc: "ZK-SNARK proof generated...", role: "ZK Circuit" }, { title: "4. Relay", desc: "Oracle submits proof...", role: "Relay Oracle" }, { title: "5. Settlement", desc: "Cardano validator checks proof...", role: "Cardano L1" }, { title: "6. Verification", desc: "Employee uses View Key...", role: "Employee Portal" } ].map((step, i) => (<div key={i} className="flex gap-6 items-start relative z-10 group"><div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center font-bold text-white">{i + 1}</div><div className="flex-1 bg-white/5 border border-white/5 p-4 rounded-xl"><h5 className="font-bold text-white">{step.title}</h5><p className="text-slate-400 text-sm">{step.desc}</p></div></div>))}</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// --- Landing View ---
-function LandingView({ onNavigate, onOpenTech }: { onNavigate: (role: UserRole) => void, onOpenTech: () => void }) {
+// --- 首頁 ---
+function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   return (
     <div className="max-w-6xl mx-auto p-6 pt-20 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-4 py-1.5 rounded-full mb-8">
@@ -189,8 +135,7 @@ function LandingView({ onNavigate, onOpenTech }: { onNavigate: (role: UserRole) 
         <span className="text-xs font-bold text-indigo-300 tracking-wider uppercase">Catalyst Project ID: 111124</span>
       </div>
       <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6"><span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400">Selective Disclosure</span><br />Payroll System</h1>
-      <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">Midnight ZK contracts execute private salary logic & generate proofs.<br />Cardano settles the funds.</p>
-      <button onClick={onOpenTech} className="mb-12 flex items-center gap-2 text-sm text-slate-400 hover:text-white border-b border-slate-700 hover:border-white pb-1 transition-all"><Code className="w-4 h-4"/> View Technical Architecture & Contracts</button>
+      <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">Midnight ZK contracts execute private salary logic & generate proofs.<br />Cardano settles the funds.</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
         <button onClick={() => onNavigate('employer')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-cyan-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Building2 className="w-24 h-24 text-cyan-500" /></div>
@@ -198,59 +143,149 @@ function LandingView({ onNavigate, onOpenTech }: { onNavigate: (role: UserRole) 
         </button>
         <button onClick={() => onNavigate('employee')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-purple-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><User className="w-24 h-24 text-purple-500" /></div>
-          <div className="relative z-10"><div className="w-12 h-12 bg-purple-900/30 rounded-xl flex items-center justify-center mb-4 text-purple-400 group-hover:scale-110 transition-transform"><Shield className="w-6 h-6" /></div><h2 className="text-2xl font-bold text-white mb-2">Employee Portal</h2><p className="text-slate-400 text-sm mb-6">Verify income with View Keys.</p><div className="inline-flex items-center text-purple-400 text-sm font-bold group-hover:gap-2 transition-all">Claim & Verify <ChevronRight className="w-4 h-4 ml-1" /></div></div>
+          <div className="relative z-10"><div className="w-12 h-12 bg-purple-900/30 rounded-xl flex items-center justify-center mb-4 text-purple-400 group-hover:scale-110 transition-transform"><Shield className="w-6 h-6" /></div><h2 className="text-2xl font-bold text-white mb-2">Employee Portal</h2><p className="text-slate-400 text-sm mb-6">Login, Verify income & Download PDF.</p><div className="inline-flex items-center text-purple-400 text-sm font-bold group-hover:gap-2 transition-all">Claim & Verify <ChevronRight className="w-4 h-4 ml-1" /></div></div>
         </button>
       </div>
     </div>
   );
 }
 
-// --- 雇主端 (Employer) ---
+// --- 雇主端 (包含自動計算 + 成功彈窗) ---
 function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean, onConnect: () => void }) {
-  const [selectedEmp, setSelectedEmp] = useState<number | null>(null);
+  const [selectedEmpId, setSelectedEmpId] = useState('');
   const [bonus, setBonus] = useState(0);
   const [step, setStep] = useState(0); 
-  const emp = EMPLOYEES.find(e => e.id === selectedEmp);
-  const total = emp ? emp.base + emp.allowance + bonus : 0;
-  const handleExecute = () => { if (!walletConnected) { onConnect(); return; } setStep(1); setTimeout(() => setStep(2), 1500); setTimeout(() => setStep(3), 3500); setTimeout(() => setStep(4), 5000); setTimeout(() => setStep(5), 7000); };
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const emp = EMPLOYEES.find(e => e.id === selectedEmpId);
+  
+  // 薪資計算邏輯
+  const laborFee = emp ? Math.floor(emp.base * 0.025) : 0;
+  const healthFee = emp ? Math.floor(emp.base * 0.015) : 0;
+  const taxFee = emp ? Math.floor((emp.base + emp.allowance + bonus) * 0.05) : 0;
+  const totalNet = emp ? (emp.base + emp.allowance + bonus - laborFee - healthFee - taxFee) : 0;
+
+  const handleExecute = () => {
+    if (!walletConnected) { onConnect(); return; }
+    setStep(1);
+    setTimeout(() => setStep(2), 1500);
+    setTimeout(() => setStep(3), 3500);
+    setTimeout(() => setStep(4), 5000);
+    setTimeout(() => {
+        setStep(5);
+        setShowSuccess(true);
+    }, 7000);
+  };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-right-4 duration-500">
+    <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-right-4 duration-500 relative">
+      {showSuccess && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+            <div className="bg-[#111623] border border-green-500/50 p-8 rounded-3xl shadow-2xl text-center animate-in zoom-in duration-300">
+                <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircle className="w-10 h-10 text-green-400"/></div>
+                <h2 className="text-2xl font-bold text-white mb-2">Payroll Executed!</h2>
+                <p className="text-slate-400 mb-6">Funds settled via Midnight & Cardano.</p>
+                <button onClick={() => { setShowSuccess(false); setStep(0); }} className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-xl font-bold">Done</button>
+            </div>
+        </div>
+      )}
+
       <div className="lg:col-span-7 space-y-6">
         <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl">
           <div className="flex justify-between items-start mb-6"><div><h2 className="text-2xl font-bold text-white">Private Payroll Execution</h2><p className="text-slate-400 text-sm mt-1">Logic runs on Midnight. Funds settle on Cardano.</p></div><div className="bg-green-500/10 border border-green-500/20 text-green-400 px-3 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1"><CheckCircle className="w-3 h-3" /> GDPR Compliant</div></div>
           <div className="space-y-6">
-            <div><label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Select Employee</label><div className="grid grid-cols-1 md:grid-cols-3 gap-3">{EMPLOYEES.map(e => (<div key={e.id} onClick={() => { setSelectedEmp(e.id); setStep(0); }} className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedEmp === e.id ? 'bg-cyan-900/20 border-cyan-500/50 ring-1 ring-cyan-500/50' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}><div className="font-bold text-white text-sm">{e.name}</div><div className="text-xs text-slate-500 mt-1">{e.address.slice(0,8)}...</div></div>))}</div></div>
-            {selectedEmp && emp && (<div className="bg-slate-900/50 rounded-xl p-6 border border-white/5 animate-in zoom-in duration-300"><div className="flex justify-between text-sm mb-2"><span className="text-slate-400">Base Salary ({emp.level})</span><span className="text-white font-mono">{emp.base.toLocaleString()}</span></div><div className="flex justify-between text-sm mb-2"><span className="text-slate-400">Allowance</span><span className="text-white font-mono">{emp.allowance.toLocaleString()}</span></div><div className="flex justify-between items-center text-sm mb-4 pt-2 border-t border-white/5"><span className="text-cyan-400">Performance Bonus</span><input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} className="bg-black/40 border border-white/10 rounded px-3 py-1 text-right text-white w-24 focus:border-cyan-500 outline-none"/></div><div className="flex justify-between items-center text-lg font-bold pt-4 border-t border-white/10"><span className="text-white">Total Settlement</span><span className="text-cyan-400">{total.toLocaleString()} tDUST</span></div></div>)}
-            <button onClick={handleExecute} disabled={!selectedEmp || (step > 0 && step < 5)} className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex justify-center items-center gap-2 ${!selectedEmp ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : step === 5 ? 'bg-green-600 text-white' : step > 0 ? 'bg-indigo-600 text-white cursor-wait' : 'bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-lg shadow-cyan-900/20'}`}>{step === 0 && <><Activity className="w-5 h-5" /> Execute Private Contract</>}{step > 0 && step < 5 && <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>}{step === 5 && <><CheckCircle className="w-5 h-5" /> Settlement Complete</>}</button>
+            <div><label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Select Employee</label><select className="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-cyan-500 cursor-pointer" onChange={(e) => setSelectedEmpId(e.target.value)}><option value="">Choose Employee...</option>{EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.name} - {e.title}</option>)}</select></div>
+            {emp && (
+              <div className="bg-slate-900/50 rounded-xl p-6 border border-white/5 animate-in zoom-in">
+                <div className="mb-4"><div className="text-xs font-bold text-green-400 uppercase mb-2">Earnings</div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Base Salary</span><span className="text-white font-mono">{emp.base.toLocaleString()}</span></div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Allowance</span><span className="text-white font-mono">{emp.allowance.toLocaleString()}</span></div><div className="flex justify-between items-center text-sm pt-1 border-t border-white/5 mt-1"><span className="text-cyan-400">Bonus</span><input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} className="bg-black/40 border border-white/10 rounded px-2 py-1 text-right text-white w-24 focus:border-cyan-500 outline-none"/></div></div>
+                <div className="mb-4 pt-4 border-t border-white/5"><div className="text-xs font-bold text-red-400 uppercase mb-2">Deductions (Estimated)</div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Labor Ins. (2.5%)</span><span className="text-red-300 font-mono">-{laborFee.toLocaleString()}</span></div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Health Ins. (1.5%)</span><span className="text-red-300 font-mono">-{healthFee.toLocaleString()}</span></div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Income Tax (5%)</span><span className="text-red-300 font-mono">-{taxFee.toLocaleString()}</span></div></div>
+                <div className="flex justify-between items-center text-lg font-bold pt-4 border-t border-white/10"><span className="text-white">Net Pay</span><span className="text-cyan-400">{totalNet.toLocaleString()} tDUST</span></div>
+              </div>
+            )}
+            <button onClick={handleExecute} disabled={!selectedEmpId || (step > 0 && step < 5)} className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex justify-center items-center gap-2 ${!selectedEmpId ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : step === 5 ? 'bg-green-600 text-white' : step > 0 ? 'bg-indigo-600 text-white cursor-wait' : 'bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-lg shadow-cyan-900/20'}`}>{step === 0 && <><Activity className="w-5 h-5" /> Sign & Pay</>}{step > 0 && step < 5 && <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>}{step === 5 && <><CheckCircle className="w-5 h-5" /> Paid</>}</button>
           </div>
         </div>
       </div>
-      <div className="lg:col-span-5">
-        <div className="bg-[#05070a] border border-slate-800 rounded-3xl p-6 h-full min-h-[400px] flex flex-col font-mono text-xs shadow-2xl relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-cyan-500 to-purple-500" /><div className="flex items-center gap-2 text-slate-500 border-b border-white/5 pb-4 mb-4"><Terminal className="w-4 h-4" /><span>System Architecture Log</span></div>
-           <div className="space-y-4 flex-1 overflow-y-auto">
-             {step === 0 && <div className="text-slate-600 italic">Waiting for execution command...</div>}
-             {step >= 1 && <div className="animate-in slide-in-from-left-4 fade-in duration-500"><div className="text-indigo-400 font-bold mb-1">[Midnight Layer]</div><div className="text-slate-300">Encrypting sensitive fields (Salary, Bonus)...</div></div>}
-             {step >= 2 && <div className="animate-in slide-in-from-left-4 fade-in duration-500 pt-2 border-t border-white/5"><div className="text-purple-400 font-bold mb-1">[ZK Circuit]</div><div className="text-slate-300">Generating Zero-Knowledge Proof...</div></div>}
-             {step >= 3 && <div className="animate-in slide-in-from-left-4 fade-in duration-500 pt-2 border-t border-white/5"><div className="text-orange-400 font-bold mb-1 flex items-center gap-2">[Relay Oracle] <Globe className="w-3 h-3"/></div><div className="text-slate-300">Bridging Proof to Cardano Settlement Layer...</div></div>}
-             {step >= 4 && <div className="animate-in slide-in-from-left-4 fade-in duration-500 pt-2 border-t border-white/5"><div className="text-cyan-400 font-bold mb-1">[Cardano Layer]</div><div className="text-slate-300">Verifying Proof & Settling Funds...</div><div className="text-green-400 mt-1 font-bold">{`> Transaction Confirmed!`}</div></div>}
-           </div>
-        </div>
-      </div>
+      <div className="lg:col-span-5"><div className="bg-[#05070a] border border-slate-800 rounded-3xl p-6 h-full min-h-[400px] flex flex-col font-mono text-xs shadow-2xl relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-cyan-500 to-purple-500" /><div className="flex items-center gap-2 text-slate-500 border-b border-white/5 pb-4 mb-4"><Terminal className="w-4 h-4" /><span>System Architecture Log</span></div><div className="space-y-4 flex-1 overflow-y-auto">{step === 0 && <div className="text-slate-600 italic">Waiting for command...</div>}{step >= 1 && <div className="animate-in slide-in-from-left-4 fade-in duration-500"><div className="text-indigo-400 font-bold mb-1">[Midnight Layer]</div><div className="text-slate-300">Encrypting sensitive fields...</div></div>}{step >= 2 && <div className="animate-in slide-in-from-left-4 fade-in duration-500 pt-2 border-t border-white/5"><div className="text-purple-400 font-bold mb-1">[ZK Circuit]</div><div className="text-slate-300">Generating Zero-Knowledge Proof...</div></div>}{step >= 3 && <div className="animate-in slide-in-from-left-4 fade-in duration-500 pt-2 border-t border-white/5"><div className="text-orange-400 font-bold mb-1 flex items-center gap-2">[Relay Oracle] <Globe className="w-3 h-3"/></div><div className="text-slate-300">Bridging Proof to Cardano Settlement Layer...</div></div>}{step >= 4 && <div className="animate-in slide-in-from-left-4 fade-in duration-500 pt-2 border-t border-white/5"><div className="text-cyan-400 font-bold mb-1">[Cardano Layer]</div><div className="text-slate-300">Verifying Proof & Settling Funds...</div><div className="text-green-400 mt-1 font-bold">{`> Transaction Confirmed!`}</div></div>}</div></div></div>
     </div>
   );
 }
 
-// --- 員工端 (Employee) ---
+// --- 員工端 (包含登入 + PDF) ---
 function EmployeeView({ walletConnected, onConnect }: { walletConnected: boolean, onConnect: () => void }) {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginId, setLoginId] = useState('');
   const [showDetails, setShowDetails] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
-  const handleDownload = () => { const proofData = { timestamp: new Date().toISOString(), employee: "addr_test1...User", amount: selectedRecord.amount, breakdown: selectedRecord.breakdown, zk_proof: "0x8a72...9f21", validator: "Midnight Network" }; const blob = new Blob([JSON.stringify(proofData, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `Proof_Income_${selectedRecord.period}.json`; document.body.appendChild(link); link.click(); document.body.removeChild(link); };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (EMPLOYEES.some(e => e.id === loginId)) setIsLoggedIn(true);
+    else alert("Invalid ID. Try 'emp01'");
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    const emp = EMPLOYEES.find(e => e.id === loginId);
+    const d = selectedRecord.details;
+    
+    doc.setFontSize(20);
+    doc.text("Midnight Payroll System", 14, 22);
+    doc.setFontSize(10);
+    doc.text("Official Payment Receipt (GDPR Compliant)", 14, 28);
+    
+    doc.text(`Employee: ${emp?.name} (${emp?.title})`, 14, 40);
+    doc.text(`Period: ${selectedRecord.period}`, 14, 46);
+    doc.text(`Transaction Hash: ${selectedRecord.hash}`, 14, 52);
+
+    autoTable(doc, {
+      startY: 60,
+      head: [['Description', 'Amount (tDUST)']],
+      body: [
+        ['Base Salary', d.base.toLocaleString()],
+        ['Allowance', d.allowance.toLocaleString()],
+        ['Bonus', d.bonus.toLocaleString()],
+        ['Labor Insurance', `-${d.labor.toLocaleString()}`],
+        ['Health Insurance', `-${d.health.toLocaleString()}`],
+        ['Income Tax', `-${d.tax.toLocaleString()}`],
+        ['NET PAYABLE', { content: d.net.toLocaleString(), styles: { fontStyle: 'bold', textColor: [0, 100, 0] } }],
+      ],
+    });
+    doc.save(`Payslip_${selectedRecord.period}.pdf`);
+  };
+
+  if (!isLoggedIn) {
+    return (
+        <div className="max-w-md mx-auto p-6 pt-20 animate-in fade-in zoom-in">
+            <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl text-center">
+                <div className="w-16 h-16 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-400"><LogIn className="w-8 h-8"/></div>
+                <h2 className="text-2xl font-bold text-white mb-6">Employee Login</h2>
+                <form onSubmit={handleLogin} className="space-y-4">
+                    <input type="text" placeholder="Employee ID (try 'emp01')" value={loginId} onChange={e => setLoginId(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-indigo-500"/>
+                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition">Login to View Payslips</button>
+                </form>
+            </div>
+        </div>
+    );
+  }
+
+  const myPayslips = PAYROLL_DB.filter(p => p.empId === loginId);
 
   return (
     <div className="max-w-4xl mx-auto p-6 animate-in fade-in slide-in-from-right-4 duration-500">
-      <div className="flex items-center justify-between mb-8"><div><h2 className="text-3xl font-bold text-white">My Payslips</h2><p className="text-slate-400">Selective Disclosure Dashboard</p></div>{!walletConnected && <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 px-4 py-2 rounded-xl flex items-center gap-2 text-sm"><Lock className="w-4 h-4" /><span>Connect wallet to decrypt View Keys</span></div>}</div>
-      <div className="space-y-4">{MOCK_PAYSLIPS.map(record => (<div key={record.id} className="bg-[#111623] border border-white/10 p-6 rounded-2xl flex items-center justify-between hover:border-white/20 transition-all"><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-slate-400"><FileText className="w-6 h-6" /></div><div><div className="text-white font-bold text-lg">{record.period} Payroll</div><div className="text-xs text-slate-500 font-mono">Proof: {record.hash}</div></div></div><div className="text-right">{walletConnected ? <div className="text-2xl font-bold text-white font-mono">{record.status === 'Pending' ? '---' : record.amount.toLocaleString()}</div> : <div className="text-2xl font-bold text-slate-600 blur-sm select-none">******</div>}<div className={`text-xs uppercase font-bold mt-1 ${record.status === 'Settled' ? 'text-green-500' : 'text-amber-500'}`}>{record.status}</div></div><div className="ml-6 border-l border-white/10 pl-6"><button onClick={() => { if (!walletConnected) { onConnect(); } else { setSelectedRecord(record); setShowDetails(true); } }} className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition">{walletConnected ? <Eye className="w-4 h-4" /> : <Lock className="w-4 h-4" />}{walletConnected ? 'Reveal Details' : 'Decrypt'}</button></div></div>))}</div>
+      <div className="flex items-center justify-between mb-8">
+        <div><h2 className="text-3xl font-bold text-white">Welcome, {EMPLOYEES.find(e => e.id === loginId)?.name}</h2><p className="text-slate-400">My Payslips</p></div>
+        <button onClick={() => setIsLoggedIn(false)} className="text-xs text-slate-500 hover:text-white border-b border-slate-700 pb-1">Logout</button>
+      </div>
+      <div className="space-y-4">
+        {myPayslips.map(record => (
+          <div key={record.id} className="bg-[#111623] border border-white/10 p-6 rounded-2xl flex items-center justify-between hover:border-white/20 transition-all">
+            <div className="flex items-center gap-4"><div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-slate-400"><FileText className="w-6 h-6"/></div><div><div className="text-white font-bold text-lg">{record.period} Payroll</div><div className="text-xs text-slate-500 font-mono">Proof: {record.hash}</div></div></div>
+            <div className="text-right">{walletConnected ? <div className="text-2xl font-bold text-white font-mono">{record.details.net.toLocaleString()}</div> : <div className="text-2xl font-bold text-slate-600 blur-sm select-none">******</div>}<div className={`text-xs uppercase font-bold mt-1 ${record.status === 'Settled' ? 'text-green-500' : 'text-amber-500'}`}>{record.status}</div></div>
+            <div className="ml-6 border-l border-white/10 pl-6"><button onClick={() => { if (!walletConnected) { onConnect(); } else { setSelectedRecord(record); setShowDetails(true); } }} className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition">{walletConnected ? <Eye className="w-4 h-4" /> : <Lock className="w-4 h-4" />}{walletConnected ? 'Reveal' : 'Decrypt'}</button></div>
+          </div>
+        ))}
+      </div>
       {showDetails && selectedRecord && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 animate-in fade-in">
           <div className="bg-[#0f172a] border border-slate-700 w-full max-w-lg rounded-2xl overflow-hidden relative shadow-2xl">
@@ -258,8 +293,15 @@ function EmployeeView({ walletConnected, onConnect }: { walletConnected: boolean
              <div className="bg-indigo-900/30 p-6 border-b border-indigo-500/20"><div className="flex items-center gap-2 text-indigo-400 font-bold mb-1"><Shield className="w-5 h-5" /> Verified by Midnight</div><h3 className="text-2xl font-bold text-white">Payslip: {selectedRecord.period}</h3></div>
              <div className="p-8 space-y-6">
                 <div className="bg-slate-900 rounded-xl p-4 border border-white/5"><h4 className="text-slate-500 text-xs font-bold uppercase mb-4">Selective Disclosure View</h4><div className="space-y-3"><div className="flex justify-between"><span className="text-slate-300">Source Origin</span><span className="text-green-400 font-mono">Verified (ZK-Proof)</span></div><div className="flex justify-between"><span className="text-slate-300">Compliance</span><span className="text-green-400 font-mono">GDPR Compliant</span></div></div></div>
-                <div className="space-y-2"><div className="flex justify-between text-sm text-slate-400"><span>Base Salary</span><span>{selectedRecord.breakdown.base.toLocaleString()}</span></div><div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span>{selectedRecord.breakdown.allowance.toLocaleString()}</span></div><div className="flex justify-between text-sm text-slate-400"><span>Bonus (Encrypted)</span><span>{selectedRecord.breakdown.bonus.toLocaleString()}</span></div><div className="h-px bg-white/10 my-2" /><div className="flex justify-between text-xl font-bold text-white"><span>Net Pay</span><span className="text-cyan-400">{selectedRecord.amount.toLocaleString()} tDUST</span></div></div>
-                <button onClick={handleDownload} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Download className="w-4 h-4" /> Export Proof for Bank/Audit</button>
+                <div className="space-y-2">
+                   <div className="flex justify-between text-sm text-slate-400"><span>Base Salary</span><span>{selectedRecord.details.base.toLocaleString()}</span></div>
+                   <div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span>{selectedRecord.details.allowance.toLocaleString()}</span></div>
+                   <div className="flex justify-between text-sm text-slate-400"><span>Bonus</span><span>{selectedRecord.details.bonus.toLocaleString()}</span></div>
+                   <div className="h-px bg-white/10 my-2" />
+                   <div className="flex justify-between text-sm text-red-300"><span>Labor/Health/Tax</span><span>-{(selectedRecord.details.labor + selectedRecord.details.health + selectedRecord.details.tax).toLocaleString()}</span></div>
+                   <div className="flex justify-between text-xl font-bold text-white"><span>Net Pay</span><span className="text-cyan-400">{selectedRecord.details.net.toLocaleString()} tDUST</span></div>
+                </div>
+                <button onClick={generatePDF} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Download className="w-4 h-4" /> Download PDF Payslip</button>
              </div>
           </div>
         </div>
