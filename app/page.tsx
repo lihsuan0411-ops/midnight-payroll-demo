@@ -9,7 +9,7 @@ import {
 import { jsPDF } from "jspdf";
 import autoTable from 'jspdf-autotable';
 
-// --- 1. TypeScript 定義修復 ---
+// --- TypeScript 定義 ---
 declare global {
   interface Window {
     cardano?: any;
@@ -19,7 +19,7 @@ declare global {
 type UserRole = 'landing' | 'employer' | 'employee';
 type WalletType = 'lace' | 'eternl' | '';
 
-// --- 2. 模擬數據 ---
+// --- 模擬數據 ---
 const EMPLOYEES = [
   { id: "emp01", name: "Alice", title: "Senior Dev", address: "addr_test1...Alice", base: 75000, allowance: 5000 },
   { id: "emp02", name: "Bob", title: "Product Lead", address: "addr_test1...Bob", base: 90000, allowance: 8000 },
@@ -150,7 +150,7 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   );
 }
 
-// --- 雇主端 (包含自動計算 + 成功彈窗) ---
+// --- 雇主端 (包含自動計算 + 成功彈窗 + 修復按鈕) ---
 function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean, onConnect: () => void }) {
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const [bonus, setBonus] = useState(0);
@@ -159,7 +159,6 @@ function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean
 
   const emp = EMPLOYEES.find(e => e.id === selectedEmpId);
   
-  // 薪資計算邏輯
   const laborFee = emp ? Math.floor(emp.base * 0.025) : 0;
   const healthFee = emp ? Math.floor(emp.base * 0.015) : 0;
   const taxFee = emp ? Math.floor((emp.base + emp.allowance + bonus) * 0.05) : 0;
@@ -179,6 +178,7 @@ function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean
 
   return (
     <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-right-4 duration-500 relative">
+      {/* Success Modal */}
       {showSuccess && (
         <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-[#111623] border border-green-500/50 p-8 rounded-3xl shadow-2xl text-center animate-in zoom-in duration-300">
@@ -192,9 +192,25 @@ function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean
 
       <div className="lg:col-span-7 space-y-6">
         <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl">
-          <div className="flex justify-between items-start mb-6"><div><h2 className="text-2xl font-bold text-white">Private Payroll Execution</h2><p className="text-slate-400 text-sm mt-1">Logic runs on Midnight. Funds settle on Cardano.</p></div><div className="bg-green-500/10 border border-green-500/20 text-green-400 px-3 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1"><CheckCircle className="w-3 h-3" /> GDPR Compliant</div></div>
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex items-center gap-3">
+               {/* 返回首頁按鈕 */}
+               <div className="bg-white/5 hover:bg-white/10 p-2 rounded-full transition cursor-pointer" onClick={() => window.location.reload()}><ChevronLeft className="text-slate-400"/></div>
+               <div><h2 className="text-2xl font-bold text-white">Private Payroll Execution</h2><p className="text-slate-400 text-sm mt-1">Logic runs on Midnight. Funds settle on Cardano.</p></div>
+            </div>
+            <div className="bg-green-500/10 border border-green-500/20 text-green-400 px-3 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1"><CheckCircle className="w-3 h-3" /> GDPR Compliant</div>
+          </div>
+          
           <div className="space-y-6">
+            {/* Wallet Connection Prompt in View */}
+            {!walletConnected && (
+               <button onClick={onConnect} className="w-full bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-xl flex items-center justify-center gap-2 text-cyan-400 font-bold hover:bg-cyan-900/30 transition">
+                  <Wallet className="w-5 h-5"/> Connect Wallet to Start
+               </button>
+            )}
+
             <div><label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Select Employee</label><select className="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-cyan-500 cursor-pointer" onChange={(e) => setSelectedEmpId(e.target.value)}><option value="">Choose Employee...</option>{EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.name} - {e.title}</option>)}</select></div>
+            
             {emp && (
               <div className="bg-slate-900/50 rounded-xl p-6 border border-white/5 animate-in zoom-in">
                 <div className="mb-4"><div className="text-xs font-bold text-green-400 uppercase mb-2">Earnings</div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Base Salary</span><span className="text-white font-mono">{emp.base.toLocaleString()}</span></div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Allowance</span><span className="text-white font-mono">{emp.allowance.toLocaleString()}</span></div><div className="flex justify-between items-center text-sm pt-1 border-t border-white/5 mt-1"><span className="text-cyan-400">Bonus</span><input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} className="bg-black/40 border border-white/10 rounded px-2 py-1 text-right text-white w-24 focus:border-cyan-500 outline-none"/></div></div>
