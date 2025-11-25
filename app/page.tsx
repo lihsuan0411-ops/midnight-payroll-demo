@@ -6,10 +6,9 @@ import {
   Lock, Terminal, Activity, FileText, Globe, Server, Eye, EyeOff, 
   Download, Loader2, X, ChevronLeft, LogOut, Calculator, LogIn
 } from 'lucide-react';
-import { jsPDF } from "jspdf";
-import autoTable from 'jspdf-autotable';
 
-// --- TypeScript 定義 ---
+// 注意：移除了頂部的 import { jsPDF } ... 改用動態匯入
+
 declare global {
   interface Window {
     cardano?: any;
@@ -44,26 +43,42 @@ const PAYROLL_DB = [
 // --- 主程式 ---
 export default function OnChainPayrollApp() {
   const [currentView, setCurrentView] = useState<UserRole>('landing');
-  
-  // 狀態提升至頂層，確保切換頁面不中斷
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletType, setWalletType] = useState<WalletType>('');
   const [walletAddress, setWalletAddress] = useState('');
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
+  // --- 連接邏輯 ---
   const connectWallet = async (type: WalletType) => {
     setIsConnecting(true);
     setShowWalletModal(false);
-    if (typeof window === 'undefined') return;
     
-    // 模擬連接成功
-    setTimeout(() => {
-      setWalletAddress(type === 'lace' ? "addr_test1...LaceUser" : "addr_test1...EternlUser");
-      setWalletType(type);
-      setWalletConnected(true);
+    if (typeof window === 'undefined') return;
+
+    // 嚴格檢查 window.cardano 是否存在
+    if (!window.cardano || !window.cardano[type]) {
+      alert(`❌ 未偵測到 ${type === 'lace' ? 'Lace' : 'Eternl'} 錢包！\n請先安裝瀏覽器擴充功能。`);
       setIsConnecting(false);
-    }, 800);
+      return;
+    }
+
+    try {
+      const api = await window.cardano[type].enable();
+      // 嘗試獲取網路 ID 以確認連接成功
+      await api.getNetworkId();
+      
+      setTimeout(() => {
+        setWalletAddress(type === 'lace' ? "addr_test1...LaceUser" : "addr_test1...EternlUser");
+        setWalletType(type);
+        setWalletConnected(true);
+        setIsConnecting(false);
+      }, 500);
+    } catch (error) {
+      console.error(error);
+      alert("⚠️ 連接失敗或用戶拒絕授權");
+      setIsConnecting(false);
+    }
   };
 
   const disconnectWallet = () => {
@@ -126,7 +141,7 @@ export default function OnChainPayrollApp() {
   );
 }
 
-// --- 首頁 ---
+// --- Views ---
 function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   return (
     <div className="max-w-6xl mx-auto p-6 pt-20 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -150,7 +165,6 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   );
 }
 
-// --- 雇主端 (包含自動計算 + 成功彈窗 + 修復按鈕) ---
 function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean, onConnect: () => void }) {
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const [bonus, setBonus] = useState(0);
@@ -170,15 +184,11 @@ function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean
     setTimeout(() => setStep(2), 1500);
     setTimeout(() => setStep(3), 3500);
     setTimeout(() => setStep(4), 5000);
-    setTimeout(() => {
-        setStep(5);
-        setShowSuccess(true);
-    }, 7000);
+    setTimeout(() => { setStep(5); setShowSuccess(true); }, 7000);
   };
 
   return (
     <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-right-4 duration-500 relative">
-      {/* Success Modal */}
       {showSuccess && (
         <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-[#111623] border border-green-500/50 p-8 rounded-3xl shadow-2xl text-center animate-in zoom-in duration-300">
@@ -189,28 +199,11 @@ function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean
             </div>
         </div>
       )}
-
       <div className="lg:col-span-7 space-y-6">
         <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl">
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex items-center gap-3">
-               {/* 返回首頁按鈕 */}
-               <div className="bg-white/5 hover:bg-white/10 p-2 rounded-full transition cursor-pointer" onClick={() => window.location.reload()}><ChevronLeft className="text-slate-400"/></div>
-               <div><h2 className="text-2xl font-bold text-white">Private Payroll Execution</h2><p className="text-slate-400 text-sm mt-1">Logic runs on Midnight. Funds settle on Cardano.</p></div>
-            </div>
-            <div className="bg-green-500/10 border border-green-500/20 text-green-400 px-3 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1"><CheckCircle className="w-3 h-3" /> GDPR Compliant</div>
-          </div>
-          
+          <div className="flex justify-between items-start mb-6"><div><h2 className="text-2xl font-bold text-white">Private Payroll Execution</h2><p className="text-slate-400 text-sm mt-1">Logic runs on Midnight. Funds settle on Cardano.</p></div><div className="bg-green-500/10 border border-green-500/20 text-green-400 px-3 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1"><CheckCircle className="w-3 h-3" /> GDPR Compliant</div></div>
           <div className="space-y-6">
-            {/* Wallet Connection Prompt in View */}
-            {!walletConnected && (
-               <button onClick={onConnect} className="w-full bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-xl flex items-center justify-center gap-2 text-cyan-400 font-bold hover:bg-cyan-900/30 transition">
-                  <Wallet className="w-5 h-5"/> Connect Wallet to Start
-               </button>
-            )}
-
             <div><label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Select Employee</label><select className="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-cyan-500 cursor-pointer" onChange={(e) => setSelectedEmpId(e.target.value)}><option value="">Choose Employee...</option>{EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.name} - {e.title}</option>)}</select></div>
-            
             {emp && (
               <div className="bg-slate-900/50 rounded-xl p-6 border border-white/5 animate-in zoom-in">
                 <div className="mb-4"><div className="text-xs font-bold text-green-400 uppercase mb-2">Earnings</div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Base Salary</span><span className="text-white font-mono">{emp.base.toLocaleString()}</span></div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Allowance</span><span className="text-white font-mono">{emp.allowance.toLocaleString()}</span></div><div className="flex justify-between items-center text-sm pt-1 border-t border-white/5 mt-1"><span className="text-cyan-400">Bonus</span><input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} className="bg-black/40 border border-white/10 rounded px-2 py-1 text-right text-white w-24 focus:border-cyan-500 outline-none"/></div></div>
@@ -227,7 +220,7 @@ function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean
   );
 }
 
-// --- 員工端 (包含登入 + PDF) ---
+// --- 員工端 (Employee) ---
 function EmployeeView({ walletConnected, onConnect }: { walletConnected: boolean, onConnect: () => void }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginId, setLoginId] = useState('');
@@ -240,34 +233,44 @@ function EmployeeView({ walletConnected, onConnect }: { walletConnected: boolean
     else alert("Invalid ID. Try 'emp01'");
   };
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    const emp = EMPLOYEES.find(e => e.id === loginId);
-    const d = selectedRecord.details;
-    
-    doc.setFontSize(20);
-    doc.text("Midnight Payroll System", 14, 22);
-    doc.setFontSize(10);
-    doc.text("Official Payment Receipt (GDPR Compliant)", 14, 28);
-    
-    doc.text(`Employee: ${emp?.name} (${emp?.title})`, 14, 40);
-    doc.text(`Period: ${selectedRecord.period}`, 14, 46);
-    doc.text(`Transaction Hash: ${selectedRecord.hash}`, 14, 52);
+  // --- 關鍵修正：動態匯入 jsPDF 以防止 SSR 錯誤 ---
+  const generatePDF = async () => {
+    try {
+      // 動態加載 PDF 庫
+      const jsPDF = (await import("jspdf")).default;
+      const autoTable = (await import("jspdf-autotable")).default;
 
-    autoTable(doc, {
-      startY: 60,
-      head: [['Description', 'Amount (tDUST)']],
-      body: [
-        ['Base Salary', d.base.toLocaleString()],
-        ['Allowance', d.allowance.toLocaleString()],
-        ['Bonus', d.bonus.toLocaleString()],
-        ['Labor Insurance', `-${d.labor.toLocaleString()}`],
-        ['Health Insurance', `-${d.health.toLocaleString()}`],
-        ['Income Tax', `-${d.tax.toLocaleString()}`],
-        ['NET PAYABLE', { content: d.net.toLocaleString(), styles: { fontStyle: 'bold', textColor: [0, 100, 0] } }],
-      ],
-    });
-    doc.save(`Payslip_${selectedRecord.period}.pdf`);
+      const doc = new jsPDF();
+      const emp = EMPLOYEES.find(e => e.id === loginId);
+      const d = selectedRecord.details;
+      
+      doc.setFontSize(20);
+      doc.text("Midnight Payroll System", 14, 22);
+      doc.setFontSize(10);
+      doc.text("Official Payment Receipt (GDPR Compliant)", 14, 28);
+      doc.text(`Employee: ${emp?.name} (${emp?.title})`, 14, 40);
+      doc.text(`Period: ${selectedRecord.period}`, 14, 46);
+      doc.text(`Transaction Hash: ${selectedRecord.hash}`, 14, 52);
+
+      // 解決 autoTable 類型問題：強制轉型
+      (autoTable as any)(doc, {
+        startY: 60,
+        head: [['Description', 'Amount (tDUST)']],
+        body: [
+          ['Base Salary', d.base.toLocaleString()],
+          ['Allowance', d.allowance.toLocaleString()],
+          ['Bonus', d.bonus.toLocaleString()],
+          ['Labor Insurance', `-${d.labor.toLocaleString()}`],
+          ['Health Insurance', `-${d.health.toLocaleString()}`],
+          ['Income Tax', `-${d.tax.toLocaleString()}`],
+          ['NET PAYABLE', { content: d.net.toLocaleString(), styles: { fontStyle: 'bold', textColor: [0, 100, 0] } }],
+        ],
+      });
+      doc.save(`Payslip_${selectedRecord.period}.pdf`);
+    } catch (err) {
+      console.error("PDF Generation Error:", err);
+      alert("PDF 生成失敗，請稍後再試。");
+    }
   };
 
   if (!isLoggedIn) {
