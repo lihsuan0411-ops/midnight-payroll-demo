@@ -6,6 +6,8 @@ import {
   Lock, Terminal, Activity, FileText, Globe, Server, Eye, EyeOff, 
   Download, Loader2, X, ChevronLeft, LogOut, Calculator, LogIn, Calendar
 } from 'lucide-react';
+import { jsPDF } from "jspdf";
+import autoTable from 'jspdf-autotable';
 
 // --- TypeScript 定義 ---
 declare global {
@@ -17,38 +19,39 @@ declare global {
 type UserRole = 'landing' | 'employer' | 'employee';
 type WalletType = 'lace' | 'eternl' | '';
 
-// --- 模擬數據 ---
+// --- 初始模擬數據 ---
 const EMPLOYEES = [
   { id: "emp01", name: "Alice", title: "Senior Dev", address: "addr_test1...Alice", base: 75000, allowance: 5000 },
   { id: "emp02", name: "Bob", title: "Product Lead", address: "addr_test1...Bob", base: 90000, allowance: 8000 },
   { id: "emp03", name: "Charlie", title: "Designer", address: "addr_test1...Charlie", base: 55000, allowance: 3000 },
 ];
 
-const PAYROLL_DB = [
+// 初始薪資單 (舊資料)
+const INITIAL_DB = [
   { 
     id: 101, empId: "emp01", period: '2025-10', status: 'Settled', hash: 'zk-7f...9c',
     details: { base: 75000, allowance: 5000, bonus: 8000, labor: 1875, health: 1125, tax: 4300, net: 80700 }
-  },
-  { 
-    id: 102, empId: "emp01", period: '2025-11', status: 'Pending', hash: 'zk-3b...1a',
-    details: { base: 75000, allowance: 5000, bonus: 0, labor: 1875, health: 1125, tax: 3900, net: 73100 }
-  },
-  { 
-    id: 201, empId: "emp02", period: '2025-11', status: 'Pending', hash: 'zk-9a...2b',
-    details: { base: 90000, allowance: 8000, bonus: 0, labor: 2250, health: 1350, tax: 4720, net: 89680 }
-  },
+  }
 ];
 
-// --- 主程式 ---
+// --- 主程式 (資料中心) ---
 export default function OnChainPayrollApp() {
   const [currentView, setCurrentView] = useState<UserRole>('landing');
   
+  // 1. 將薪資資料庫提升到最上層，變成可被修改的狀態
+  const [payrollData, setPayrollData] = useState(INITIAL_DB);
+
   // 狀態提升至頂層
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletType, setWalletType] = useState<WalletType>('');
   const [walletAddress, setWalletAddress] = useState('');
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+
+  // 新增一筆薪資紀錄的函數 (給雇主端用)
+  const addPayrollRecord = (record: any) => {
+    setPayrollData(prev => [record, ...prev]);
+  };
 
   const connectWallet = async (type: WalletType) => {
     setIsConnecting(true);
@@ -85,6 +88,7 @@ export default function OnChainPayrollApp() {
 
   return (
     <div className="min-h-screen bg-[#0a0e17] text-slate-200 font-sans selection:bg-cyan-500/30 pb-20">
+      {/* 背景 */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
         <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-indigo-900/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-900/10 rounded-full blur-[100px]" />
@@ -113,8 +117,24 @@ export default function OnChainPayrollApp() {
 
       <main className="relative z-10">
         {currentView === 'landing' && <LandingView onNavigate={setCurrentView} />}
-        {currentView === 'employer' && <EmployerView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} />}
-        {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} />}
+        
+        {/* 傳遞 onPaymentSuccess 給雇主端，讓它可以寫入資料 */}
+        {currentView === 'employer' && (
+          <EmployerView 
+            walletConnected={walletConnected} 
+            onConnect={() => setShowWalletModal(true)} 
+            onPaymentSuccess={addPayrollRecord} 
+          />
+        )}
+        
+        {/* 傳遞 payrollData 給員工端，讓它可以讀取最新資料 */}
+        {currentView === 'employee' && (
+          <EmployeeView 
+            walletConnected={walletConnected} 
+            onConnect={() => setShowWalletModal(true)} 
+            payrollData={payrollData} 
+          />
+        )}
       </main>
 
       {showWalletModal && (
@@ -146,7 +166,7 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
         <button onClick={() => onNavigate('employer')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-cyan-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Building2 className="w-24 h-24 text-cyan-500" /></div>
-          <div className="relative z-10"><div className="w-12 h-12 bg-cyan-900/30 rounded-xl flex items-center justify-center mb-4 text-cyan-400 group-hover:scale-110 transition-transform"><Server className="w-6 h-6" /></div><h2 className="text-2xl font-bold text-white mb-2">Employer Portal</h2><p className="text-slate-400 text-sm mb-6">Execute private logic, select period & settle funds.</p><div className="inline-flex items-center text-cyan-400 text-sm font-bold group-hover:gap-2 transition-all">Launch Dashboard <ChevronRight className="w-4 h-4 ml-1" /></div></div>
+          <div className="relative z-10"><div className="w-12 h-12 bg-cyan-900/30 rounded-xl flex items-center justify-center mb-4 text-cyan-400 group-hover:scale-110 transition-transform"><Server className="w-6 h-6" /></div><h2 className="text-2xl font-bold text-white mb-2">Employer Portal</h2><p className="text-slate-400 text-sm mb-6">Execute private logic, generate ZK proofs.</p><div className="inline-flex items-center text-cyan-400 text-sm font-bold group-hover:gap-2 transition-all">Launch Dashboard <ChevronRight className="w-4 h-4 ml-1" /></div></div>
         </button>
         <button onClick={() => onNavigate('employee')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-purple-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><User className="w-24 h-24 text-purple-500" /></div>
@@ -157,10 +177,10 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   );
 }
 
-// --- 雇主端 (新增：週期選擇 Period) ---
-function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean, onConnect: () => void }) {
+// --- 雇主端 (新增：onPaymentSuccess 用於寫入資料) ---
+function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { walletConnected: boolean, onConnect: () => void, onPaymentSuccess: (record: any) => void }) {
   const [selectedEmpId, setSelectedEmpId] = useState('');
-  const [period, setPeriod] = useState(''); // 新增週期狀態
+  const [period, setPeriod] = useState(''); 
   const [bonus, setBonus] = useState(0);
   const [step, setStep] = useState(0); 
   const [showSuccess, setShowSuccess] = useState(false);
@@ -178,7 +198,30 @@ function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean
     setTimeout(() => setStep(2), 1500);
     setTimeout(() => setStep(3), 3500);
     setTimeout(() => setStep(4), 5000);
-    setTimeout(() => { setStep(5); setShowSuccess(true); }, 7000);
+    setTimeout(() => { 
+        setStep(5); 
+        setShowSuccess(true);
+        
+        // ✅ 關鍵：真的把資料寫進 DB
+        const newRecord = {
+            id: Date.now(), // 產生唯一ID
+            empId: selectedEmpId,
+            period: period,
+            status: 'Pending',
+            hash: 'zk-' + Math.random().toString(36).substring(7),
+            details: {
+                base: emp?.base,
+                allowance: emp?.allowance,
+                bonus: bonus,
+                labor: laborFee,
+                health: healthFee,
+                tax: taxFee,
+                net: totalNet
+            }
+        };
+        onPaymentSuccess(newRecord);
+
+    }, 7000);
   };
 
   return (
@@ -208,7 +251,6 @@ function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean
             {!walletConnected && <button onClick={onConnect} className="w-full bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-xl flex items-center justify-center gap-2 text-cyan-400 font-bold hover:bg-cyan-900/30 transition"><Wallet className="w-5 h-5"/> Connect Wallet to Start</button>}
 
             <div className="grid grid-cols-2 gap-4">
-                {/* 員工選擇 */}
                 <div>
                     <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">1. Select Employee</label>
                     <select className="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-cyan-500 cursor-pointer" onChange={(e) => setSelectedEmpId(e.target.value)}>
@@ -216,16 +258,10 @@ function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean
                         {EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.name} - {e.title}</option>)}
                     </select>
                 </div>
-                {/* 週期選擇 */}
                 <div>
                     <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">2. Select Period</label>
                     <div className="relative">
-                        <input 
-                            type="month" 
-                            value={period}
-                            onChange={(e) => setPeriod(e.target.value)}
-                            className="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-cyan-500"
-                        />
+                        <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-cyan-500"/>
                         <Calendar className="absolute right-4 top-4 text-slate-500 w-5 h-5 pointer-events-none"/>
                     </div>
                 </div>
@@ -247,8 +283,8 @@ function EmployerView({ walletConnected, onConnect }: { walletConnected: boolean
   );
 }
 
-// --- 員工端 (包含登入 + PDF + 週期顯示) ---
-function EmployeeView({ walletConnected, onConnect }: { walletConnected: boolean, onConnect: () => void }) {
+// --- 員工端 (接收 payrollData 作為 prop) ---
+function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConnected: boolean, onConnect: () => void, payrollData: any[] }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginId, setLoginId] = useState('');
   const [showDetails, setShowDetails] = useState(false);
@@ -288,7 +324,8 @@ function EmployeeView({ walletConnected, onConnect }: { walletConnected: boolean
     );
   }
 
-  const myPayslips = PAYROLL_DB.filter(p => p.empId === loginId);
+  // ✅ 使用從上層傳來的動態數據
+  const myPayslips = payrollData.filter(p => p.empId === loginId);
 
   return (
     <div className="max-w-4xl mx-auto p-6 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -301,7 +338,7 @@ function EmployeeView({ walletConnected, onConnect }: { walletConnected: boolean
              <div className="bg-indigo-900/30 p-6 border-b border-indigo-500/20"><div className="flex items-center gap-2 text-indigo-400 font-bold mb-1"><Shield className="w-5 h-5" /> Verified by Midnight</div><h3 className="text-2xl font-bold text-white">Payslip: {selectedRecord.period}</h3></div>
              <div className="p-8 space-y-6">
                 <div className="bg-slate-900 rounded-xl p-4 border border-white/5"><h4 className="text-slate-500 text-xs font-bold uppercase mb-4">Selective Disclosure View</h4><div className="space-y-3"><div className="flex justify-between"><span className="text-slate-300">Source Origin</span><span className="text-green-400 font-mono">Verified (ZK-Proof)</span></div><div className="flex justify-between"><span className="text-slate-300">Compliance</span><span className="text-green-400 font-mono">GDPR Compliant</span></div></div></div>
-                <div className="space-y-2"><div className="flex justify-between text-sm text-slate-400"><span>Base Salary</span><span>{selectedRecord.details.base.toLocaleString()}</span></div><div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span>{selectedRecord.details.allowance.toLocaleString()}</span></div><div className="flex justify-between text-sm text-slate-400"><span>Bonus</span><span>{selectedRecord.details.bonus.toLocaleString()}</span></div><div className="h-px bg-white/10 my-2" /><div className="flex justify-between text-sm text-red-300"><span>Labor/Health/Tax</span><span>-{(selectedRecord.details.labor + selectedRecord.details.health + selectedRecord.details.tax).toLocaleString()}</span></div><div className="flex justify-between text-xl font-bold text-white"><span>Net Pay</span><span className="text-cyan-400">{selectedRecord.details.net.toLocaleString()} tDUST</span></div></div>
+                <div className="space-y-2"><div className="flex justify-between text-sm text-slate-400"><span>Base Salary</span><span>{selectedRecord.details.base.toLocaleString()}</span></div><div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span>{selectedRecord.details.allowance.toLocaleString()}</span></div><div className="flex justify-between text-sm text-slate-400"><span>Bonus (Encrypted)</span><span>{selectedRecord.details.bonus.toLocaleString()}</span></div><div className="h-px bg-white/10 my-2" /><div className="flex justify-between text-sm text-red-300"><span>Labor/Health/Tax</span><span>-{(selectedRecord.details.labor + selectedRecord.details.health + selectedRecord.details.tax).toLocaleString()}</span></div><div className="flex justify-between text-xl font-bold text-white"><span>Net Pay</span><span className="text-cyan-400">{selectedRecord.details.net.toLocaleString()} tDUST</span></div></div>
                 <button onClick={generatePDF} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Download className="w-4 h-4" /> Download PDF Payslip</button>
              </div>
           </div>
