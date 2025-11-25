@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Shield, Wallet, Loader2, CheckCircle, ChevronRight, X, ChevronLeft, User, Lock, Eye, EyeOff, LogOut } from 'lucide-react';
+import { Shield, Wallet, Loader2, CheckCircle, ChevronRight, X, ChevronLeft, User, Lock, Eye, EyeOff, LogOut, Download } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -61,14 +61,17 @@ export default function EmployeePage() {
     setWalletConnected(false);
     setWalletAddress('');
     setConnectedWalletName('');
-    alert("已安全斷開連接，並清除本地暫存數據。");
   };
 
+  // ✅ 核心邏輯：自由選擇錢包來申領
   const handleVerifyClick = (id: string) => {
+    // 如果還沒連錢包，直接跳出「選擇錢包視窗」
     if(!walletConnected) {
-        alert("🔒 安全性攔截：請先連接您的錢包以驗證身份並解密數據。");
+        setShowWalletModal(true);
         return;
     }
+
+    // 如果已連接，開始驗證流程
     setVerifyingId(id);
     setVerificationStep(0);
     setTimeout(() => setVerificationStep(1), 1000);
@@ -109,10 +112,7 @@ export default function EmployeePage() {
                     </button>
                 </div>
              ) : (
-                <button 
-                    onClick={() => setShowWalletModal(true)}
-                    className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all bg-indigo-600 hover:bg-indigo-500 text-white"
-                >
+                <button onClick={() => setShowWalletModal(true)} className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all bg-indigo-600 hover:bg-indigo-500 text-white">
                     {isConnecting ? <Loader2 className="animate-spin w-4 h-4" /> : <Wallet className="w-4 h-4" />}
                     Connect Wallet
                 </button>
@@ -125,8 +125,8 @@ export default function EmployeePage() {
         <div className="flex items-center gap-3 mb-8">
             <div className="p-3 bg-indigo-900/30 rounded-xl border border-indigo-500/20"><User className="w-8 h-8 text-indigo-400"/></div>
             <div>
-                <h1 className="text-3xl font-bold text-white">薪資查驗</h1>
-                <p className="text-slate-400">使用私鑰解密您的鏈上薪資紀錄</p>
+                <h1 className="text-3xl font-bold text-white">薪資查驗與申領</h1>
+                <p className="text-slate-400">連接錢包以解密並申領您的鏈上薪資</p>
             </div>
         </div>
 
@@ -156,8 +156,11 @@ export default function EmployeePage() {
                     </td>
                     <td className="p-4 text-xs text-slate-500 font-mono">{rec.hash}</td>
                     <td className="p-4 text-right">
-                        {rec.status === 'verified' ? <span className="inline-flex items-center gap-1 text-green-400 bg-green-400/10 px-3 py-1 rounded-full text-xs font-bold border border-green-400/20"><CheckCircle className="w-3 h-3"/> Verified</span> : 
-                        <button onClick={() => handleVerifyClick(rec.id)} className="flex items-center gap-1 ml-auto text-indigo-300 hover:text-white bg-indigo-500/20 hover:bg-indigo-500 border border-indigo-500/30 px-4 py-1.5 rounded-full text-xs font-bold transition-all">Verify Proof <ChevronRight className="w-3 h-3" /></button>}
+                        {rec.status === 'verified' ? <span className="inline-flex items-center gap-1 text-green-400 bg-green-400/10 px-3 py-1 rounded-full text-xs font-bold border border-green-400/20"><CheckCircle className="w-3 h-3"/> Claimed</span> : 
+                        <button onClick={() => handleVerifyClick(rec.id)} className="flex items-center gap-2 ml-auto text-white bg-indigo-600 hover:bg-indigo-500 px-5 py-2 rounded-full text-xs font-bold transition-all shadow-lg shadow-indigo-500/20">
+                            <Download className="w-3 h-3" />
+                            Claim & Verify
+                        </button>}
                     </td>
                     </tr>
                 ))}
@@ -166,35 +169,37 @@ export default function EmployeePage() {
             </div>
         </div>
 
+        {/* 錢包選擇 Modal */}
         {showWalletModal && (
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                 <div className="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
                     <button onClick={() => setShowWalletModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5"/></button>
-                    <h3 className="text-xl font-bold text-white mb-6 text-center">Connect Wallet</h3>
+                    <h3 className="text-xl font-bold text-white mb-6 text-center">Connect Wallet to Claim</h3>
                     <div className="space-y-4">
                         <button onClick={() => connectWallet('lace')} className="w-full flex items-center justify-between bg-slate-800 hover:bg-cyan-900/30 border border-slate-700 hover:border-cyan-500/50 p-4 rounded-xl transition-all group">
-                            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center text-white font-bold text-lg">L</div><div className="text-left"><div className="text-white font-bold group-hover:text-cyan-400">Lace Wallet</div><div className="text-xs text-slate-500">IOG Official</div></div></div><ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-cyan-400"/>
+                            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center text-white font-bold text-lg">L</div><div className="text-left"><div className="text-white font-bold group-hover:text-cyan-400">Lace Wallet</div><div className="text-xs text-slate-500">IOG Official</div></div></div>
                         </button>
                         <button onClick={() => connectWallet('eternl')} className="w-full flex items-center justify-between bg-slate-800 hover:bg-orange-900/30 border border-slate-700 hover:border-orange-500/50 p-4 rounded-xl transition-all group">
-                            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-lg">E</div><div className="text-left"><div className="text-white font-bold group-hover:text-orange-400">Eternl Wallet</div><div className="text-xs text-slate-500">Community Favorite</div></div></div><ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-orange-400"/>
+                            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-lg">E</div><div className="text-left"><div className="text-white font-bold group-hover:text-orange-400">Eternl Wallet</div><div className="text-xs text-slate-500">Community Favorite</div></div></div>
                         </button>
                     </div>
                 </div>
             </div>
         )}
 
+        {/* 驗證 Modal */}
         {verifyingId && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                 <div className="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl p-6 shadow-2xl relative ring-1 ring-white/10">
                     <button onClick={() => setVerifyingId(null)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5"/></button>
-                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Shield className="text-indigo-400" /> Verifying Proof...</h3>
+                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2"><Shield className="text-indigo-400" /> Claiming Salary...</h3>
                     <div className="space-y-6">
                         {[1, 2, 3].map((step) => (
                             <div key={step} className={`flex items-center gap-4 transition-all duration-500 ${verificationStep >= step ? 'opacity-100' : 'opacity-30'}`}>
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center border ${verificationStep >= step ? 'bg-green-500 border-green-500 text-black' : 'border-slate-500 text-slate-500'}`}>{verificationStep > step ? <CheckCircle className="w-5 h-5"/> : step}</div>
                                 <div>
-                                    <div className="text-sm font-bold text-slate-200">{step === 1 ? 'Fetching Data' : step === 2 ? 'Verifying ZK-SNARK' : 'Decrypting Amount'}</div>
-                                    <div className="text-xs text-slate-500">{step === 1 ? 'Downloading from Network...' : step === 2 ? 'Checking validity...' : 'Using private key...'}</div>
+                                    <div className="text-sm font-bold text-slate-200">{step === 1 ? 'Fetching Proof' : step === 2 ? 'Verifying & Decrypting' : 'Transferring Assets'}</div>
+                                    <div className="text-xs text-slate-500">{step === 1 ? 'Downloading from Midnight...' : step === 2 ? `Using ${connectedWalletName} signature...` : 'Funds arriving in wallet...'}</div>
                                 </div>
                             </div>
                         ))}
