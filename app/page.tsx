@@ -3,11 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Shield, Wallet, Building2, User, ChevronRight, CheckCircle, 
-  Lock, Terminal, Activity, FileText, Globe, Server, Eye, EyeOff, 
-  Download, Loader2, X, ChevronLeft, LogOut, Calculator, LogIn, Calendar
+  Lock, Terminal, Activity, FileText, Globe, Server, Eye, Download, Loader2, X, ChevronLeft, LogOut, LogIn, Calendar
 } from 'lucide-react';
-import { jsPDF } from "jspdf";
-import autoTable from 'jspdf-autotable';
 
 // --- TypeScript 定義 ---
 declare global {
@@ -130,7 +127,7 @@ export default function OnChainPayrollApp() {
   );
 }
 
-// --- 首頁 (全新優化版) ---
+// --- 首頁 (全新優化版：已刪除艱澀技術名詞) ---
 function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   return (
     <div className="max-w-6xl mx-auto p-6 pt-20 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -154,6 +151,7 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
         Empower your organization with secure, compliant, and confidential salary distribution. Experience the future of Web3 human resources.
       </p>
 
+      {/* 特色標籤 */}
       <div className="flex flex-wrap justify-center gap-4 mb-12">
         <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm cursor-default">
           <Shield className="w-4 h-4 text-emerald-400" /> GDPR Compliant
