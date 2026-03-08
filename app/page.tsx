@@ -18,10 +18,10 @@ const EMPLOYEES = [
   { id: "emp01", name: "Alice", title: "Senior Dev", address: "0x71C...976F", base: 75000, allowance: 5000 },
   { id: "emp02", name: "Bob", title: "Product Lead", address: "0x3B2...1A9E", base: 90000, allowance: 8000 },
   { id: "emp03", name: "Charlie", title: "Designer", address: "0x8D4...5C2B", base: 55000, allowance: 3000 },
-  { id: "emp04", name: "Aden", title: "Operation Intern", address: "0x9E3...4A21", base: 40000, allowance: 2000 }, // 🎉 Aden 登場！
+  { id: "emp04", name: "Aden", title: "Operation Intern", address: "0x9E3...4A21", base: 40000, allowance: 2000 }, 
 ];
 
-// 為了展示完整流程，初始資料設為空，需要雇主親自發放
+// 為了展示完整流程，初始資料設為空
 const INITIAL_DB: any[] = []; 
 
 // --- 主程式 ---
@@ -245,7 +245,7 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { wallet
               <div className="bg-slate-900/50 rounded-xl p-6 border border-white/5 animate-in zoom-in">
                 <div className="mb-4"><div className="text-xs font-bold text-green-400 uppercase mb-2">Earnings</div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Base Salary</span><span className="text-white font-mono">{emp.base.toLocaleString()}</span></div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Allowance</span><span className="text-white font-mono">{emp.allowance.toLocaleString()}</span></div><div className="flex justify-between items-center text-sm pt-1 border-t border-white/5 mt-1"><span className="text-cyan-400">Bonus</span><input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} className="bg-black/40 border border-white/10 rounded px-2 py-1 text-right text-white w-24 focus:border-cyan-500 outline-none"/></div></div>
                 <div className="mb-4 pt-4 border-t border-white/5"><div className="text-xs font-bold text-red-400 uppercase mb-2">Deductions (Estimated)</div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Labor Ins. (2.5%)</span><span className="text-red-300 font-mono">-{laborFee.toLocaleString()}</span></div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Health Ins. (1.5%)</span><span className="text-red-300 font-mono">-{healthFee.toLocaleString()}</span></div><div className="flex justify-between text-sm mb-1"><span className="text-slate-400">Income Tax (5%)</span><span className="text-red-300 font-mono">-{taxFee.toLocaleString()}</span></div></div>
-                <div className="flex justify-between items-center text-lg font-bold pt-4 border-t border-white/10"><span className="text-white">Net Pay</span><span className="text-cyan-400">{totalNet.toLocaleString()} USDC</span></div>
+                <div className="flex justify-between items-center text-lg font-bold pt-4 border-t border-white/10"><span className="text-white">Net Pay</span><span className="text-cyan-400">{totalNet.toLocaleString()} TWD</span></div>
               </div>
             )}
             <button onClick={handleExecute} disabled={!selectedEmpId || !period || (step > 0 && step < 5)} className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex justify-center items-center gap-2 ${(!selectedEmpId || !period) ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : step === 5 ? 'bg-green-600 text-white' : step > 0 ? 'bg-indigo-600 text-white cursor-wait' : 'bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-lg shadow-cyan-900/20'}`}>{step === 0 && <><Activity className="w-5 h-5" /> Sign & Pay</>}{step > 0 && step < 5 && <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>}{step === 5 && <><CheckCircle className="w-5 h-5" /> Paid</>}</button>
@@ -257,14 +257,26 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { wallet
   );
 }
 
-// --- 員工端 (已加入三階段強制流程) ---
+// --- 員工端 ---
 function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConnected: boolean, onConnect: () => void, payrollData: any[] }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginId, setLoginId] = useState('');
   const [showDetails, setShowDetails] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  
+  // 記錄哪些薪資已經被提領，以及提領中的動畫狀態
+  const [withdrawnRecords, setWithdrawnRecords] = useState<Record<number, boolean>>({});
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
-  // 狀態 1：還沒登入 (顯示帳號密碼輸入框)
+  const handleWithdraw = (id: number) => {
+    setIsWithdrawing(true);
+    // 模擬區塊鏈交易處理時間 (2秒)
+    setTimeout(() => {
+      setIsWithdrawing(false);
+      setWithdrawnRecords(prev => ({ ...prev, [id]: true }));
+    }, 2000);
+  };
+
   if (!isLoggedIn) {
     return (
         <div className="max-w-md mx-auto p-6 pt-20 animate-in fade-in zoom-in">
@@ -284,7 +296,6 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
     );
   }
 
-  // 狀態 2：已登入，但沒連錢包 (強制要求連錢包)
   if (isLoggedIn && !walletConnected) {
     return (
       <div className="max-w-md mx-auto p-6 pt-20 animate-in fade-in zoom-in">
@@ -300,7 +311,6 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
     );
   }
 
-  // 狀態 3：已登入，且已連錢包 (顯示薪資單或空畫面)
   const myPayslips = payrollData.filter(p => p.empId === loginId);
 
   const generatePDF = async () => {
@@ -317,8 +327,9 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
       doc.text(`Period: ${selectedRecord.period}`, 14, 46);
       doc.text(`Transaction Hash: ${selectedRecord.hash}`, 14, 52);
 
+      // PDF 中的幣別也改為 TWD
       (autoTable as any)(doc, {
-        startY: 60, head: [['Description', 'Amount (USDC)']],
+        startY: 60, head: [['Description', 'Amount (TWD)']],
         body: [['Base Salary', d.base.toLocaleString()], ['Allowance', d.allowance.toLocaleString()], ['Bonus', d.bonus.toLocaleString()], ['Labor Insurance', `-${d.labor.toLocaleString()}`], ['Health Insurance', `-${d.health.toLocaleString()}`], ['Income Tax', `-${d.tax.toLocaleString()}`], ['NET PAYABLE', { content: d.net.toLocaleString(), styles: { fontStyle: 'bold', textColor: [0, 100, 0] } }]],
       });
       doc.save(`Payslip_${selectedRecord.period}.pdf`);
@@ -348,11 +359,13 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-white font-mono">{record.details.net.toLocaleString()}</div>
-                <div className={`text-xs uppercase font-bold mt-1 ${record.status === 'Pending' ? 'text-amber-500' : 'text-green-500'}`}>Ready to Claim</div>
+                <div className={`text-xs uppercase font-bold mt-1 ${withdrawnRecords[record.id] ? 'text-green-500' : 'text-amber-500'}`}>
+                  {withdrawnRecords[record.id] ? 'Withdrawn' : 'Ready to Claim'}
+                </div>
               </div>
               <div className="ml-6 border-l border-white/10 pl-6">
                 <button onClick={() => { setSelectedRecord(record); setShowDetails(true); }} className="bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition shadow-lg shadow-cyan-900/20">
-                  <Download className="w-4 h-4" /> Claim & View
+                  <Eye className="w-4 h-4" /> View Details
                 </button>
               </div>
             </div>
@@ -364,11 +377,41 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 animate-in fade-in">
           <div className="bg-[#0f172a] border border-slate-700 w-full max-w-lg rounded-2xl overflow-hidden relative shadow-2xl">
              <button onClick={() => setShowDetails(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X /></button>
-             <div className="bg-indigo-900/30 p-6 border-b border-indigo-500/20"><div className="flex items-center gap-2 text-green-400 font-bold mb-1"><CheckCircle className="w-5 h-5" /> Successfully Claimed</div><h3 className="text-2xl font-bold text-white">Payslip: {selectedRecord.period}</h3></div>
+             <div className="bg-indigo-900/30 p-6 border-b border-indigo-500/20">
+               <div className="flex items-center gap-2 text-green-400 font-bold mb-1"><CheckCircle className="w-5 h-5" /> Verified securely</div>
+               <h3 className="text-2xl font-bold text-white">Payslip: {selectedRecord.period}</h3>
+             </div>
              <div className="p-8 space-y-6">
                 <div className="bg-slate-900 rounded-xl p-4 border border-white/5"><h4 className="text-slate-500 text-xs font-bold uppercase mb-4">Selective Disclosure View</h4><div className="space-y-3"><div className="flex justify-between"><span className="text-slate-300">Source Origin</span><span className="text-green-400 font-mono">Verified (ZK-Proof)</span></div><div className="flex justify-between"><span className="text-slate-300">Compliance</span><span className="text-green-400 font-mono">GDPR Compliant</span></div></div></div>
-                <div className="space-y-2"><div className="flex justify-between text-sm text-slate-400"><span>Base Salary</span><span>{selectedRecord.details.base.toLocaleString()}</span></div><div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span>{selectedRecord.details.allowance.toLocaleString()}</span></div><div className="flex justify-between text-sm text-slate-400"><span>Bonus (Encrypted)</span><span>{selectedRecord.details.bonus.toLocaleString()}</span></div><div className="h-px bg-white/10 my-2" /><div className="flex justify-between text-sm text-red-300"><span>Labor/Health/Tax</span><span>-{(selectedRecord.details.labor + selectedRecord.details.health + selectedRecord.details.tax).toLocaleString()}</span></div><div className="flex justify-between text-xl font-bold text-white"><span>Net Pay</span><span className="text-cyan-400">{selectedRecord.details.net.toLocaleString()} USDC</span></div></div>
-                <button onClick={generatePDF} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Download className="w-4 h-4" /> Download PDF Payslip</button>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm text-slate-400"><span>Base Salary</span><span>{selectedRecord.details.base.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span>{selectedRecord.details.allowance.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-slate-400"><span>Bonus (Encrypted)</span><span>{selectedRecord.details.bonus.toLocaleString()}</span></div>
+                  <div className="h-px bg-white/10 my-2" />
+                  
+                  {/* 將扣除項目獨立分開列示 */}
+                  <div className="flex justify-between text-sm text-red-300"><span>Labor Insurance (勞保)</span><span>-{selectedRecord.details.labor.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-red-300"><span>Health Insurance (健保)</span><span>-{selectedRecord.details.health.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-red-300"><span>Income Tax (所得稅)</span><span>-{selectedRecord.details.tax.toLocaleString()}</span></div>
+                  
+                  <div className="flex justify-between text-xl font-bold text-white pt-2"><span>Net Pay</span><span className="text-cyan-400">{selectedRecord.details.net.toLocaleString()} TWD</span></div>
+                </div>
+
+                {/* 加入提領薪資與下載薪資單的並排按鈕 */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <button 
+                    onClick={() => handleWithdraw(selectedRecord.id)} 
+                    disabled={withdrawnRecords[selectedRecord.id] || isWithdrawing}
+                    className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition ${withdrawnRecords[selectedRecord.id] ? 'bg-green-600/20 text-green-400 cursor-not-allowed border border-green-500/30' : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/20'}`}
+                  >
+                    {isWithdrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : withdrawnRecords[selectedRecord.id] ? <CheckCircle className="w-4 h-4" /> : <Wallet className="w-4 h-4" />}
+                    {isWithdrawing ? 'Processing...' : withdrawnRecords[selectedRecord.id] ? 'Withdrawn' : 'Withdraw'}
+                  </button>
+                  <button onClick={generatePDF} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition">
+                    <Download className="w-4 h-4" /> PDF
+                  </button>
+                </div>
+
              </div>
           </div>
         </div>
