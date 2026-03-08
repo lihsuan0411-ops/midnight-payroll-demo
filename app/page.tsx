@@ -18,14 +18,11 @@ const EMPLOYEES = [
   { id: "emp01", name: "Alice", title: "Senior Dev", address: "0x71C...976F", base: 75000, allowance: 5000 },
   { id: "emp02", name: "Bob", title: "Product Lead", address: "0x3B2...1A9E", base: 90000, allowance: 8000 },
   { id: "emp03", name: "Charlie", title: "Designer", address: "0x8D4...5C2B", base: 55000, allowance: 3000 },
+  { id: "emp04", name: "Aden", title: "Operation Intern", address: "0x9E3...4A21", base: 40000, allowance: 2000 }, // 🎉 Aden 登場！
 ];
 
-const INITIAL_DB = [
-  { 
-    id: 101, empId: "emp01", period: '2025-10', status: 'Settled', hash: 'zk-7f...9c',
-    details: { base: 75000, allowance: 5000, bonus: 8000, labor: 1875, health: 1125, tax: 4300, net: 80700 }
-  }
-];
+// 為了展示完整流程，初始資料設為空，需要雇主親自發放
+const INITIAL_DB: any[] = []; 
 
 // --- 主程式 ---
 export default function OnChainPayrollApp() {
@@ -41,7 +38,7 @@ export default function OnChainPayrollApp() {
     setPayrollData(prev => [record, ...prev]);
   };
 
-  // 專為 Demo 設計的模擬錢包連接 (保證不會失敗)
+  // 專為 Demo 設計的模擬錢包連接
   const connectWallet = async (type: WalletType) => {
     setIsConnecting(true);
     setShowWalletModal(false);
@@ -94,7 +91,7 @@ export default function OnChainPayrollApp() {
         {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} payrollData={payrollData} />}
       </main>
 
-      {/* 選擇錢包 Modal - 已將 Lace 改為 MetaMask 橘色小狐狸風格圖示 */}
+      {/* 選擇錢包 Modal */}
       {showWalletModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-[#111623] border border-white/10 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
@@ -121,18 +118,15 @@ export default function OnChainPayrollApp() {
 function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   return (
     <div className="max-w-6xl mx-auto p-6 pt-24 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
       <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6">
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400">
           Enterprise-Grade
         </span><br />
         On-Chain Payroll
       </h1>
-
       <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
         Empower your organization with secure, compliant, and confidential salary distribution. Experience the future of Web3 human resources.
       </p>
-
       <div className="flex flex-wrap justify-center gap-4 mb-16">
         <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm cursor-default">
           <Shield className="w-4 h-4 text-emerald-400" /> GDPR Compliant
@@ -144,7 +138,6 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
           <Activity className="w-4 h-4 text-cyan-400" /> Real-time Settlement
         </div>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
         <button onClick={() => onNavigate('employer')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-cyan-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden shadow-lg shadow-cyan-900/10 hover:shadow-cyan-900/20">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Building2 className="w-24 h-24 text-cyan-500" /></div>
@@ -155,13 +148,12 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
             <div className="inline-flex items-center text-cyan-400 text-sm font-bold group-hover:gap-2 transition-all">Launch Dashboard <ChevronRight className="w-4 h-4 ml-1" /></div>
           </div>
         </button>
-
         <button onClick={() => onNavigate('employee')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-purple-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden shadow-lg shadow-purple-900/10 hover:shadow-purple-900/20">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><User className="w-24 h-24 text-purple-500" /></div>
           <div className="relative z-10">
             <div className="w-12 h-12 bg-purple-900/30 rounded-xl flex items-center justify-center mb-4 text-purple-400 group-hover:scale-110 transition-transform"><Shield className="w-6 h-6" /></div>
             <h2 className="text-2xl font-bold text-white mb-2">Employee Portal</h2>
-            <p className="text-slate-400 text-sm mb-6">Securely log in to verify income and download official PDF payslips.</p>
+            <p className="text-slate-400 text-sm mb-6">Securely log in to claim salary and download official PDF payslips.</p>
             <div className="inline-flex items-center text-purple-400 text-sm font-bold group-hover:gap-2 transition-all">Claim & Verify <ChevronRight className="w-4 h-4 ml-1" /></div>
           </div>
         </button>
@@ -214,7 +206,7 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { wallet
                 <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4"><CheckCircle className="w-10 h-10 text-green-400"/></div>
                 <h2 className="text-2xl font-bold text-white mb-2">Payroll Executed!</h2>
                 <p className="text-slate-400 mb-6">Period: <span className="text-white font-bold">{period}</span><br/>Funds settled securely on-chain.</p>
-                <button onClick={() => { setShowSuccess(false); setStep(0); }} className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-xl font-bold">Done</button>
+                <button onClick={() => { setShowSuccess(false); setStep(0); setSelectedEmpId(''); setPeriod(''); setBonus(0); }} className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-xl font-bold">Done</button>
             </div>
         </div>
       )}
@@ -235,7 +227,7 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { wallet
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">1. Select Employee</label>
-                    <select className="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-cyan-500 cursor-pointer" onChange={(e) => setSelectedEmpId(e.target.value)}>
+                    <select className="w-full bg-slate-900/50 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-cyan-500 cursor-pointer" value={selectedEmpId} onChange={(e) => setSelectedEmpId(e.target.value)}>
                         <option value="">Choose...</option>
                         {EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.name} - {e.title}</option>)}
                     </select>
@@ -265,17 +257,51 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { wallet
   );
 }
 
-// --- 員工端 (已加入下拉選單) ---
+// --- 員工端 (已加入三階段強制流程) ---
 function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConnected: boolean, onConnect: () => void, payrollData: any[] }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginId, setLoginId] = useState('');
   const [showDetails, setShowDetails] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loginId) setIsLoggedIn(true);
-  };
+  // 狀態 1：還沒登入 (顯示帳號密碼輸入框)
+  if (!isLoggedIn) {
+    return (
+        <div className="max-w-md mx-auto p-6 pt-20 animate-in fade-in zoom-in">
+          <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl text-center shadow-xl">
+            <div className="w-16 h-16 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-400"><LogIn className="w-8 h-8"/></div>
+            <h2 className="text-2xl font-bold text-white mb-6">Employee Login</h2>
+            <form onSubmit={(e) => { e.preventDefault(); if (loginId) setIsLoggedIn(true); }} className="space-y-4">
+              <select value={loginId} onChange={e => setLoginId(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-indigo-500 cursor-pointer appearance-none">
+                <option value="">Select User ID...</option>
+                {EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.id} ({e.name})</option>)}
+              </select>
+              <input type="password" placeholder="Password (any)" className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-indigo-500"/>
+              <button type="submit" disabled={!loginId} className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white py-3 rounded-xl font-bold transition">Login to Portal</button>
+            </form>
+          </div>
+        </div>
+    );
+  }
+
+  // 狀態 2：已登入，但沒連錢包 (強制要求連錢包)
+  if (isLoggedIn && !walletConnected) {
+    return (
+      <div className="max-w-md mx-auto p-6 pt-20 animate-in fade-in zoom-in">
+        <div className="bg-[#111623] border border-orange-500/30 p-8 rounded-3xl text-center shadow-xl shadow-orange-900/10">
+          <div className="w-16 h-16 bg-orange-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-orange-400"><Wallet className="w-8 h-8"/></div>
+          <h2 className="text-2xl font-bold text-white mb-2">Wallet Required</h2>
+          <p className="text-slate-400 mb-8">Hello, {EMPLOYEES.find(e => e.id === loginId)?.name}! Please connect your Web3 wallet to verify your identity and claim your salary.</p>
+          <button onClick={onConnect} className="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-bold transition flex items-center justify-center gap-2">
+            <Wallet className="w-5 h-5"/> Connect Wallet
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 狀態 3：已登入，且已連錢包 (顯示薪資單或空畫面)
+  const myPayslips = payrollData.filter(p => p.empId === loginId);
 
   const generatePDF = async () => {
     try {
@@ -299,52 +325,46 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
     } catch (err) { alert("PDF Generation Failed"); }
   };
 
-  if (!isLoggedIn) {
-    return (
-        <div className="max-w-md mx-auto p-6 pt-20 animate-in fade-in zoom-in">
-          <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl text-center shadow-xl">
-            <div className="w-16 h-16 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-400"><LogIn className="w-8 h-8"/></div>
-            <h2 className="text-2xl font-bold text-white mb-6">User ID and password</h2>
-            <form onSubmit={handleLogin} className="space-y-4">
-              
-              {/* 改成與雇主端相同的下拉式選單 */}
-              <select 
-                value={loginId} 
-                onChange={e => setLoginId(e.target.value)} 
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-indigo-500 cursor-pointer appearance-none"
-              >
-                <option value="">Select User ID...</option>
-                {EMPLOYEES.map(e => (
-                  <option key={e.id} value={e.id}>{e.id} ({e.name})</option>
-                ))}
-              </select>
-              
-              <input type="password" placeholder="Password (any)" className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-indigo-500"/>
-              
-              <button 
-                type="submit" 
-                disabled={!loginId}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white py-3 rounded-xl font-bold transition"
-              >
-                Login to View Payslips
-              </button>
-            </form>
-          </div>
-        </div>
-    );
-  }
-
-  const myPayslips = payrollData.filter(p => p.empId === loginId);
-
   return (
     <div className="max-w-4xl mx-auto p-6 animate-in fade-in slide-in-from-right-4 duration-500">
-      <div className="flex items-center justify-between mb-8"><div><h2 className="text-3xl font-bold text-white">Welcome, {EMPLOYEES.find(e => e.id === loginId)?.name}</h2><p className="text-slate-400">My Payslips</p></div><button onClick={() => setIsLoggedIn(false)} className="text-xs text-slate-500 hover:text-white border-b border-slate-700 pb-1">Logout</button></div>
-      <div className="space-y-4">{myPayslips.map(record => (<div key={record.id} className="bg-[#111623] border border-white/10 p-6 rounded-2xl flex items-center justify-between hover:border-white/20 transition-all"><div className="flex items-center gap-4"><div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-slate-400"><FileText className="w-6 h-6"/></div><div><div className="text-white font-bold text-lg">{record.period} Payroll</div><div className="text-xs text-slate-500 font-mono">Proof: {record.hash}</div></div></div><div className="text-right">{walletConnected ? <div className="text-2xl font-bold text-white font-mono">{record.details.net.toLocaleString()}</div> : <div className="text-2xl font-bold text-slate-600 blur-sm select-none">******</div>}<div className={`text-xs uppercase font-bold mt-1 ${record.status === 'Settled' ? 'text-green-500' : 'text-amber-500'}`}>{record.status}</div></div><div className="ml-6 border-l border-white/10 pl-6"><button onClick={() => { if (!walletConnected) { onConnect(); } else { setSelectedRecord(record); setShowDetails(true); } }} className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition">{walletConnected ? <Eye className="w-4 h-4" /> : <Lock className="w-4 h-4" />}{walletConnected ? 'Reveal' : 'Decrypt'}</button></div></div>))}</div>
+      <div className="flex items-center justify-between mb-8">
+        <div><h2 className="text-3xl font-bold text-white">Welcome, {EMPLOYEES.find(e => e.id === loginId)?.name}</h2><p className="text-slate-400">Your Payroll Dashboard</p></div>
+        <button onClick={() => setIsLoggedIn(false)} className="text-xs text-slate-500 hover:text-white border-b border-slate-700 pb-1">Logout</button>
+      </div>
+
+      {myPayslips.length === 0 ? (
+        <div className="bg-[#111623] border border-dashed border-white/20 p-12 rounded-3xl text-center flex flex-col items-center">
+          <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mb-4 text-slate-500"><FileText className="w-8 h-8"/></div>
+          <h3 className="text-xl font-bold text-white mb-2">No Salary Records Yet</h3>
+          <p className="text-slate-400 max-w-sm mx-auto">Your employer hasn't executed any payroll for you yet. Once they do, it will appear here for you to claim.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {myPayslips.map(record => (
+            <div key={record.id} className="bg-[#111623] border border-white/10 p-6 rounded-2xl flex items-center justify-between hover:border-white/20 transition-all">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-slate-400"><FileText className="w-6 h-6"/></div>
+                <div><div className="text-white font-bold text-lg">{record.period} Payroll</div><div className="text-xs text-slate-500 font-mono">Proof: {record.hash}</div></div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white font-mono">{record.details.net.toLocaleString()}</div>
+                <div className={`text-xs uppercase font-bold mt-1 ${record.status === 'Pending' ? 'text-amber-500' : 'text-green-500'}`}>Ready to Claim</div>
+              </div>
+              <div className="ml-6 border-l border-white/10 pl-6">
+                <button onClick={() => { setSelectedRecord(record); setShowDetails(true); }} className="bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition shadow-lg shadow-cyan-900/20">
+                  <Download className="w-4 h-4" /> Claim & View
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {showDetails && selectedRecord && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 animate-in fade-in">
           <div className="bg-[#0f172a] border border-slate-700 w-full max-w-lg rounded-2xl overflow-hidden relative shadow-2xl">
              <button onClick={() => setShowDetails(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X /></button>
-             <div className="bg-indigo-900/30 p-6 border-b border-indigo-500/20"><div className="flex items-center gap-2 text-indigo-400 font-bold mb-1"><Shield className="w-5 h-5" /> Verified securely</div><h3 className="text-2xl font-bold text-white">Payslip: {selectedRecord.period}</h3></div>
+             <div className="bg-indigo-900/30 p-6 border-b border-indigo-500/20"><div className="flex items-center gap-2 text-green-400 font-bold mb-1"><CheckCircle className="w-5 h-5" /> Successfully Claimed</div><h3 className="text-2xl font-bold text-white">Payslip: {selectedRecord.period}</h3></div>
              <div className="p-8 space-y-6">
                 <div className="bg-slate-900 rounded-xl p-4 border border-white/5"><h4 className="text-slate-500 text-xs font-bold uppercase mb-4">Selective Disclosure View</h4><div className="space-y-3"><div className="flex justify-between"><span className="text-slate-300">Source Origin</span><span className="text-green-400 font-mono">Verified (ZK-Proof)</span></div><div className="flex justify-between"><span className="text-slate-300">Compliance</span><span className="text-green-400 font-mono">GDPR Compliant</span></div></div></div>
                 <div className="space-y-2"><div className="flex justify-between text-sm text-slate-400"><span>Base Salary</span><span>{selectedRecord.details.base.toLocaleString()}</span></div><div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span>{selectedRecord.details.allowance.toLocaleString()}</span></div><div className="flex justify-between text-sm text-slate-400"><span>Bonus (Encrypted)</span><span>{selectedRecord.details.bonus.toLocaleString()}</span></div><div className="h-px bg-white/10 my-2" /><div className="flex justify-between text-sm text-red-300"><span>Labor/Health/Tax</span><span>-{(selectedRecord.details.labor + selectedRecord.details.health + selectedRecord.details.tax).toLocaleString()}</span></div><div className="flex justify-between text-xl font-bold text-white"><span>Net Pay</span><span className="text-cyan-400">{selectedRecord.details.net.toLocaleString()} USDC</span></div></div>
