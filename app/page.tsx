@@ -26,7 +26,6 @@ const EMPLOYEES = [
   { id: "emp03", name: "Charlie", title: "Designer", address: "addr_test1...Charlie", base: 55000, allowance: 3000 },
 ];
 
-// 初始薪資單 (舊資料)
 const INITIAL_DB = [
   { 
     id: 101, empId: "emp01", period: '2025-10', status: 'Settled', hash: 'zk-7f...9c',
@@ -34,21 +33,16 @@ const INITIAL_DB = [
   }
 ];
 
-// --- 主程式 (資料中心) ---
+// --- 主程式 ---
 export default function OnChainPayrollApp() {
   const [currentView, setCurrentView] = useState<UserRole>('landing');
-  
-  // 1. 將薪資資料庫提升到最上層，變成可被修改的狀態
   const [payrollData, setPayrollData] = useState(INITIAL_DB);
-
-  // 狀態提升至頂層
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletType, setWalletType] = useState<WalletType>('');
   const [walletAddress, setWalletAddress] = useState('');
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // 新增一筆薪資紀錄的函數 (給雇主端用)
   const addPayrollRecord = (record: any) => {
     setPayrollData(prev => [record, ...prev]);
   };
@@ -88,7 +82,6 @@ export default function OnChainPayrollApp() {
 
   return (
     <div className="min-h-screen bg-[#0a0e17] text-slate-200 font-sans selection:bg-cyan-500/30 pb-20">
-      {/* 背景 */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
         <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-indigo-900/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-900/10 rounded-full blur-[100px]" />
@@ -117,24 +110,8 @@ export default function OnChainPayrollApp() {
 
       <main className="relative z-10">
         {currentView === 'landing' && <LandingView onNavigate={setCurrentView} />}
-        
-        {/* 傳遞 onPaymentSuccess 給雇主端，讓它可以寫入資料 */}
-        {currentView === 'employer' && (
-          <EmployerView 
-            walletConnected={walletConnected} 
-            onConnect={() => setShowWalletModal(true)} 
-            onPaymentSuccess={addPayrollRecord} 
-          />
-        )}
-        
-        {/* 傳遞 payrollData 給員工端，讓它可以讀取最新資料 */}
-        {currentView === 'employee' && (
-          <EmployeeView 
-            walletConnected={walletConnected} 
-            onConnect={() => setShowWalletModal(true)} 
-            payrollData={payrollData} 
-          />
-        )}
+        {currentView === 'employer' && <EmployerView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} onPaymentSuccess={addPayrollRecord} />}
+        {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} payrollData={payrollData} />}
       </main>
 
       {showWalletModal && (
@@ -153,13 +130,11 @@ export default function OnChainPayrollApp() {
   );
 }
 
-// --- Views ---
-// --- 首頁 (優化版 Landing View) ---
+// --- 首頁 (全新優化版) ---
 function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   return (
     <div className="max-w-6xl mx-auto p-6 pt-20 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
       
-      {/* 頂部標籤 */}
       <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-4 py-1.5 rounded-full mb-8 shadow-lg shadow-indigo-500/5">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
@@ -168,7 +143,6 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
         <span className="text-xs font-bold text-indigo-300 tracking-wider uppercase">Catalyst Project ID: 111124</span>
       </div>
 
-      {/* 主標題 */}
       <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6">
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400">
           Enterprise-Grade
@@ -176,27 +150,23 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
         On-Chain Payroll
       </h1>
 
-      {/* 副標題 (更具商業感) */}
       <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
         Empower your organization with secure, compliant, and confidential salary distribution. Experience the future of Web3 human resources.
       </p>
 
-      {/* 新增：特色標籤 (Badges) 讓畫面更豐富 */}
       <div className="flex flex-wrap justify-center gap-4 mb-12">
-        <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm hover:bg-white/10 transition-colors cursor-default">
+        <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm cursor-default">
           <Shield className="w-4 h-4 text-emerald-400" /> GDPR Compliant
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm hover:bg-white/10 transition-colors cursor-default">
+        <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm cursor-default">
           <Lock className="w-4 h-4 text-purple-400" /> Zero-Knowledge Privacy
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm hover:bg-white/10 transition-colors cursor-default">
+        <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm cursor-default">
           <Activity className="w-4 h-4 text-cyan-400" /> Real-time Settlement
         </div>
       </div>
 
-      {/* 導航按鈕區塊 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-        {/* 雇主入口 */}
         <button onClick={() => onNavigate('employer')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-cyan-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden shadow-lg shadow-cyan-900/10 hover:shadow-cyan-900/20">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Building2 className="w-24 h-24 text-cyan-500" /></div>
           <div className="relative z-10">
@@ -207,7 +177,6 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
           </div>
         </button>
 
-        {/* 員工入口 */}
         <button onClick={() => onNavigate('employee')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-purple-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden shadow-lg shadow-purple-900/10 hover:shadow-purple-900/20">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><User className="w-24 h-24 text-purple-500" /></div>
           <div className="relative z-10">
@@ -222,7 +191,7 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   );
 }
 
-// --- 雇主端 (新增：onPaymentSuccess 用於寫入資料) ---
+// --- 雇主端 ---
 function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { walletConnected: boolean, onConnect: () => void, onPaymentSuccess: (record: any) => void }) {
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const [period, setPeriod] = useState(''); 
@@ -246,26 +215,15 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { wallet
     setTimeout(() => { 
         setStep(5); 
         setShowSuccess(true);
-        
-        // ✅ 關鍵：真的把資料寫進 DB
         const newRecord = {
-            id: Date.now(), // 產生唯一ID
+            id: Date.now(),
             empId: selectedEmpId,
             period: period,
             status: 'Pending',
             hash: 'zk-' + Math.random().toString(36).substring(7),
-            details: {
-                base: emp?.base,
-                allowance: emp?.allowance,
-                bonus: bonus,
-                labor: laborFee,
-                health: healthFee,
-                tax: taxFee,
-                net: totalNet
-            }
+            details: { base: emp?.base, allowance: emp?.allowance, bonus: bonus, labor: laborFee, health: healthFee, tax: taxFee, net: totalNet }
         };
         onPaymentSuccess(newRecord);
-
     }, 7000);
   };
 
@@ -328,7 +286,7 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { wallet
   );
 }
 
-// --- 員工端 (接收 payrollData 作為 prop) ---
+// --- 員工端 ---
 function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConnected: boolean, onConnect: () => void, payrollData: any[] }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginId, setLoginId] = useState('');
@@ -369,7 +327,6 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
     );
   }
 
-  // ✅ 使用從上層傳來的動態數據
   const myPayslips = payrollData.filter(p => p.empId === loginId);
 
   return (
