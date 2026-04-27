@@ -47,9 +47,11 @@ export default function OnChainPayrollApp() {
     setIsConnecting(true);
     setShowWalletModal(false);
     setTimeout(() => {
+      // Safe is strictly disabled in UI now, but keeping logic just in case
       if (type === 'safe') setWalletAddress("eth:0x4A2...MultiSig");
       else if (type === 'metamask') setWalletAddress("0x71C...976F");
       else setWalletAddress("addr_test1...User");
+      
       setWalletType(type);
       setWalletConnected(true);
       setIsConnecting(false);
@@ -96,7 +98,7 @@ export default function OnChainPayrollApp() {
         <div className="flex items-center gap-4">
           {walletConnected ? (
             <div className="flex items-center gap-2">
-              <div className={`px-4 py-1.5 rounded-full border text-xs font-mono flex items-center gap-2 ${walletType === 'metamask' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : walletType === 'safe' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-blue-500/30 bg-blue-500/10 text-blue-300'}`}><span className="w-2 h-2 bg-green-400 rounded-full"></span>{walletAddress}</div>
+              <div className={`px-4 py-1.5 rounded-full border text-xs font-mono flex items-center gap-2 ${walletType === 'metamask' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : 'border-blue-500/30 bg-blue-500/10 text-blue-300'}`}><span className="w-2 h-2 bg-green-400 rounded-full"></span>{walletAddress}</div>
               <button onClick={disconnectWallet} className="p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition"><LogOut className="w-4 h-4" /></button>
             </div>
           ) : (
@@ -124,18 +126,21 @@ export default function OnChainPayrollApp() {
             <h3 className="text-white font-bold text-center mb-6 text-lg">Select Provider</h3>
             <div className="space-y-3">
               
+              {/* Employer View: Disabled Safe Wallet (Vision Showcase) */}
               {currentView === 'employer' && (
                 <>
-                  <button onClick={() => connectWallet('safe')} className="w-full bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/20 p-4 rounded-xl flex items-center gap-4 transition-all group">
+                  <button disabled className="w-full bg-emerald-900/5 border border-emerald-500/20 p-4 rounded-xl flex items-center gap-4 cursor-not-allowed opacity-50 relative">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-emerald-500 uppercase tracking-widest border border-emerald-500/30 px-2 py-1 rounded bg-emerald-500/10">Coming Soon</div>
                     <div className="w-10 h-10 rounded-full bg-[#111623] flex items-center justify-center overflow-hidden border border-emerald-500/30 p-1">
-                      <img src="/safe.png" alt="Safe" className="w-full h-full object-contain" />
+                      <img src="/safe.png" alt="Safe" className="w-full h-full object-contain grayscale" />
                     </div>
-                    <div className="text-left font-bold text-white group-hover:text-emerald-400 transition-colors">Safe (Multi-Sig)</div>
+                    <div className="text-left font-bold text-slate-300">Safe (Multi-Sig)</div>
                   </button>
-                  <div className="flex items-center gap-4 py-1"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-500 font-bold uppercase">Standard</span><div className="h-px bg-white/5 flex-1"></div></div>
+                  <div className="flex items-center gap-4 py-1"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Standard Access</span><div className="h-px bg-white/5 flex-1"></div></div>
                 </>
               )}
 
+              {/* Standard Wallets */}
               <button onClick={() => connectWallet('metamask')} className="w-full bg-white/5 hover:bg-orange-900/20 border border-white/5 p-4 rounded-xl flex items-center gap-4 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-2">
                   <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-full h-full object-contain" />
@@ -308,11 +313,10 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
     setProcessingId(id);
     setTimeout(() => {
       setProcessingId(null);
-      // 1. 全域資料庫更新狀態
+      // Update global DB
       onWithdraw(id); 
-      // 2. 最重要的修補：即時把眼前的模態框資料狀態也改為 Claimed
+      // Update modal state instantly
       setSelectedRecord(prev => prev ? { ...prev, status: 'Claimed' } : null);
-      // 3. 跳出成功彈窗
       setShowWithdrawSuccessModal(true); 
     }, 2500);
   };
@@ -436,11 +440,10 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
              <div className="p-8 space-y-6">
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm text-slate-400"><span>Base Salary (TWD)</span><span className="text-white font-mono">{selectedRecord.details.base.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span className="text-white font-mono">{selectedRecord.details.allowance.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-sm text-slate-400"><span>Bonus</span><span className="text-white font-mono">{selectedRecord.details.bonus.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-slate-400"><span>Allowance / Bonus</span><span className="text-white font-mono">{(selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
                   <div className="h-px bg-white/5 my-4" />
                   
-                  {/* 分開的勞、健、稅 */}
+                  {/* 分開列示勞保與健保 */}
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Labor Insurance</span><span className="font-mono">-{selectedRecord.details.labor.toLocaleString()}</span></div>
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Health Insurance</span><span className="font-mono">-{selectedRecord.details.health.toLocaleString()}</span></div>
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Income Tax</span><span className="font-mono">-{selectedRecord.details.tax.toLocaleString()}</span></div>
