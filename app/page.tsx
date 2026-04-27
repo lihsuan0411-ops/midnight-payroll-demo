@@ -2,7 +2,7 @@
 // @ts-nocheck
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Shield, Wallet, Building2, User, ChevronRight, CheckCircle, 
   Lock, Terminal, Activity, FileText, Globe, Server, Eye, Download, 
@@ -21,24 +21,42 @@ const EMPLOYEES = [
   { id: "emp04", name: "Aden", title: "Operation Intern", address: "0x9E3...4A21", base: 40000, allowance: 2000 }, 
 ];
 
-// 為了展示完整流程，初始資料設為空
-const INITIAL_DB: any[] = []; 
-
 // --- 主程式 ---
 export default function OnChainPayrollApp() {
   const [currentView, setCurrentView] = useState<UserRole>('landing');
-  const [payrollData, setPayrollData] = useState(INITIAL_DB);
+  const [payrollData, setPayrollData] = useState<any[]>([]); // 預設為空
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletType, setWalletType] = useState<WalletType>('');
   const [walletAddress, setWalletAddress] = useState('');
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
+  // 1. 網頁載入時，從「資料庫 (LocalStorage)」讀取資料
+  useEffect(() => {
+    const savedDB = localStorage.getItem('payrollDB');
+    if (savedDB) {
+      setPayrollData(JSON.parse(savedDB));
+    }
+  }, []);
+
+  // 2. 當薪資資料有變動時，自動存入「資料庫」
+  useEffect(() => {
+    localStorage.setItem('payrollDB', JSON.stringify(payrollData));
+  }, [payrollData]);
+
+  // 新增薪資紀錄
   const addPayrollRecord = (record: any) => {
     setPayrollData(prev => [record, ...prev]);
   };
 
-  // 專為 Demo 設計的模擬錢包連接
+  // 將薪資狀態改為「已提領」
+  const markAsWithdrawn = (id: number) => {
+    setPayrollData(prev => prev.map(record => 
+      record.id === id ? { ...record, status: 'Withdrawn' } : record
+    ));
+  };
+
+  // 模擬錢包連接
   const connectWallet = async (type: WalletType) => {
     setIsConnecting(true);
     setShowWalletModal(false);
@@ -57,6 +75,12 @@ export default function OnChainPayrollApp() {
     setWalletAddress('');
   };
 
+  // 安全返回首頁：切換畫面並「強制登出錢包」
+  const navigateToLanding = () => {
+    setCurrentView('landing');
+    disconnectWallet();
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0e17] text-slate-200 font-sans selection:bg-cyan-500/30 pb-20">
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
@@ -65,7 +89,7 @@ export default function OnChainPayrollApp() {
       </div>
 
       <nav className="border-b border-white/5 bg-[#0a0e17]/80 backdrop-blur-md sticky top-0 z-50 h-16 flex items-center justify-between px-6">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentView('landing')}>
+        <div className="flex items-center gap-3 cursor-pointer" onClick={navigateToLanding}>
           <div className="bg-gradient-to-br from-cyan-500 to-indigo-600 p-2 rounded-lg"><Hexagon className="w-5 h-5 text-white" /></div>
           <div className="leading-tight hidden md:block"><div className="font-bold text-white text-lg tracking-wide">On-chain Payroll</div></div>
         </div>
@@ -87,8 +111,8 @@ export default function OnChainPayrollApp() {
 
       <main className="relative z-10">
         {currentView === 'landing' && <LandingView onNavigate={setCurrentView} />}
-        {currentView === 'employer' && <EmployerView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} onPaymentSuccess={addPayrollRecord} />}
-        {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} payrollData={payrollData} />}
+        {currentView === 'employer' && <EmployerView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} onPaymentSuccess={addPayrollRecord} onNavigateBack={navigateToLanding} />}
+        {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} payrollData={payrollData} onWithdraw={markAsWithdrawn} onLogout={navigateToLanding} />}
       </main>
 
       {/* 選擇錢包 Modal */}
@@ -163,7 +187,7 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
 }
 
 // --- 雇主端 ---
-function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { walletConnected: boolean, onConnect: () => void, onPaymentSuccess: (record: any) => void }) {
+function EmployerView({ walletConnected, onConnect, onPaymentSuccess, onNavigateBack }: { walletConnected: boolean, onConnect: () => void, onPaymentSuccess: (record: any) => void, onNavigateBack: () => void }) {
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const [period, setPeriod] = useState(''); 
   const [bonus, setBonus] = useState(0);
@@ -190,7 +214,7 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { wallet
             id: Date.now(),
             empId: selectedEmpId,
             period: period,
-            status: 'Pending',
+            status: 'Pending', // 剛發放時是 Pending 狀態
             hash: '0x' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
             details: { base: emp?.base, allowance: emp?.allowance, bonus: bonus, labor: laborFee, health: healthFee, tax: taxFee, net: totalNet }
         };
@@ -215,7 +239,8 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { wallet
         <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl">
           <div className="flex justify-between items-start mb-6">
             <div className="flex items-center gap-3">
-               <div className="bg-white/5 hover:bg-white/10 p-2 rounded-full transition cursor-pointer" onClick={() => window.location.reload()}><ChevronLeft className="text-slate-400"/></div>
+               {/* 修正返回鍵：使用 onNavigateBack，不重新整理網頁 */}
+               <div className="bg-white/5 hover:bg-white/10 p-2 rounded-full transition cursor-pointer" onClick={onNavigateBack}><ChevronLeft className="text-slate-400"/></div>
                <div><h2 className="text-2xl font-bold text-white">Private Payroll Execution</h2><p className="text-slate-400 text-sm mt-1">Logic runs securely on-chain. Funds settle via Smart Contract.</p></div>
             </div>
             <div className="bg-green-500/10 border border-green-500/20 text-green-400 px-3 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1"><CheckCircle className="w-3 h-3" /> GDPR Compliant</div>
@@ -258,29 +283,29 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess }: { wallet
 }
 
 // --- 員工端 ---
-function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConnected: boolean, onConnect: () => void, payrollData: any[] }) {
+function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onLogout }: { walletConnected: boolean, onConnect: () => void, payrollData: any[], onWithdraw: (id: number) => void, onLogout: () => void }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginId, setLoginId] = useState('');
   const [showDetails, setShowDetails] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   
-  // 記錄哪些薪資已經被提領，以及提領中的動畫狀態
-  const [withdrawnRecords, setWithdrawnRecords] = useState<Record<number, boolean>>({});
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
   const handleWithdraw = (id: number) => {
-    setIsWithdrawing(true);
-    // 模擬區塊鏈交易處理時間 (2秒)
+    setProcessingId(id);
+    // 模擬區塊鏈交易處理時間 (2秒)，然後將資料庫狀態改為已提領
     setTimeout(() => {
-      setIsWithdrawing(false);
-      setWithdrawnRecords(prev => ({ ...prev, [id]: true }));
+      setProcessingId(null);
+      onWithdraw(id); // 更新全域資料庫
     }, 2000);
   };
 
   if (!isLoggedIn) {
     return (
         <div className="max-w-md mx-auto p-6 pt-20 animate-in fade-in zoom-in">
-          <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl text-center shadow-xl">
+          <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl text-center shadow-xl relative">
+            {/* 員工端也加上返回鍵，確保安全登出 */}
+            <button onClick={onLogout} className="absolute top-6 left-6 text-slate-500 hover:text-white"><ChevronLeft className="w-6 h-6"/></button>
             <div className="w-16 h-16 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-400"><LogIn className="w-8 h-8"/></div>
             <h2 className="text-2xl font-bold text-white mb-6">Employee Login</h2>
             <form onSubmit={(e) => { e.preventDefault(); if (loginId) setIsLoggedIn(true); }} className="space-y-4">
@@ -299,7 +324,8 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
   if (isLoggedIn && !walletConnected) {
     return (
       <div className="max-w-md mx-auto p-6 pt-20 animate-in fade-in zoom-in">
-        <div className="bg-[#111623] border border-orange-500/30 p-8 rounded-3xl text-center shadow-xl shadow-orange-900/10">
+        <div className="bg-[#111623] border border-orange-500/30 p-8 rounded-3xl text-center shadow-xl shadow-orange-900/10 relative">
+          <button onClick={onLogout} className="absolute top-6 left-6 text-slate-500 hover:text-white"><ChevronLeft className="w-6 h-6"/></button>
           <div className="w-16 h-16 bg-orange-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-orange-400"><Wallet className="w-8 h-8"/></div>
           <h2 className="text-2xl font-bold text-white mb-2">Wallet Required</h2>
           <p className="text-slate-400 mb-8">Hello, {EMPLOYEES.find(e => e.id === loginId)?.name}! Please connect your Web3 wallet to verify your identity and claim your salary.</p>
@@ -327,7 +353,6 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
       doc.text(`Period: ${selectedRecord.period}`, 14, 46);
       doc.text(`Transaction Hash: ${selectedRecord.hash}`, 14, 52);
 
-      // PDF 中的幣別也改為 TWD
       (autoTable as any)(doc, {
         startY: 60, head: [['Description', 'Amount (TWD)']],
         body: [['Base Salary', d.base.toLocaleString()], ['Allowance', d.allowance.toLocaleString()], ['Bonus', d.bonus.toLocaleString()], ['Labor Insurance', `-${d.labor.toLocaleString()}`], ['Health Insurance', `-${d.health.toLocaleString()}`], ['Income Tax', `-${d.tax.toLocaleString()}`], ['NET PAYABLE', { content: d.net.toLocaleString(), styles: { fontStyle: 'bold', textColor: [0, 100, 0] } }]],
@@ -340,7 +365,8 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
     <div className="max-w-4xl mx-auto p-6 animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="flex items-center justify-between mb-8">
         <div><h2 className="text-3xl font-bold text-white">Welcome, {EMPLOYEES.find(e => e.id === loginId)?.name}</h2><p className="text-slate-400">Your Payroll Dashboard</p></div>
-        <button onClick={() => setIsLoggedIn(false)} className="text-xs text-slate-500 hover:text-white border-b border-slate-700 pb-1">Logout</button>
+        {/* 安全登出按鈕：除了切換回首頁，同時斷開錢包 */}
+        <button onClick={onLogout} className="text-xs text-slate-500 hover:text-white border-b border-slate-700 pb-1">Logout</button>
       </div>
 
       {myPayslips.length === 0 ? (
@@ -351,25 +377,28 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
         </div>
       ) : (
         <div className="space-y-4">
-          {myPayslips.map(record => (
-            <div key={record.id} className="bg-[#111623] border border-white/10 p-6 rounded-2xl flex items-center justify-between hover:border-white/20 transition-all">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-slate-400"><FileText className="w-6 h-6"/></div>
-                <div><div className="text-white font-bold text-lg">{record.period} Payroll</div><div className="text-xs text-slate-500 font-mono">Proof: {record.hash}</div></div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-white font-mono">{record.details.net.toLocaleString()}</div>
-                <div className={`text-xs uppercase font-bold mt-1 ${withdrawnRecords[record.id] ? 'text-green-500' : 'text-amber-500'}`}>
-                  {withdrawnRecords[record.id] ? 'Withdrawn' : 'Ready to Claim'}
+          {myPayslips.map(record => {
+            const isWithdrawn = record.status === 'Withdrawn';
+            return (
+              <div key={record.id} className="bg-[#111623] border border-white/10 p-6 rounded-2xl flex items-center justify-between hover:border-white/20 transition-all">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-slate-400"><FileText className="w-6 h-6"/></div>
+                  <div><div className="text-white font-bold text-lg">{record.period} Payroll</div><div className="text-xs text-slate-500 font-mono">Proof: {record.hash}</div></div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-white font-mono">{record.details.net.toLocaleString()}</div>
+                  <div className={`text-xs uppercase font-bold mt-1 ${isWithdrawn ? 'text-green-500' : 'text-amber-500'}`}>
+                    {isWithdrawn ? 'Withdrawn' : 'Ready to Claim'}
+                  </div>
+                </div>
+                <div className="ml-6 border-l border-white/10 pl-6">
+                  <button onClick={() => { setSelectedRecord(record); setShowDetails(true); }} className="bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition shadow-lg shadow-cyan-900/20">
+                    <Eye className="w-4 h-4" /> View Details
+                  </button>
                 </div>
               </div>
-              <div className="ml-6 border-l border-white/10 pl-6">
-                <button onClick={() => { setSelectedRecord(record); setShowDetails(true); }} className="bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition shadow-lg shadow-cyan-900/20">
-                  <Eye className="w-4 h-4" /> View Details
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -388,24 +417,20 @@ function EmployeeView({ walletConnected, onConnect, payrollData }: { walletConne
                   <div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span>{selectedRecord.details.allowance.toLocaleString()}</span></div>
                   <div className="flex justify-between text-sm text-slate-400"><span>Bonus (Encrypted)</span><span>{selectedRecord.details.bonus.toLocaleString()}</span></div>
                   <div className="h-px bg-white/10 my-2" />
-                  
-                  {/* 將扣除項目獨立分開列示 */}
                   <div className="flex justify-between text-sm text-red-300"><span>Labor Insurance (勞保)</span><span>-{selectedRecord.details.labor.toLocaleString()}</span></div>
                   <div className="flex justify-between text-sm text-red-300"><span>Health Insurance (健保)</span><span>-{selectedRecord.details.health.toLocaleString()}</span></div>
                   <div className="flex justify-between text-sm text-red-300"><span>Income Tax (所得稅)</span><span>-{selectedRecord.details.tax.toLocaleString()}</span></div>
-                  
                   <div className="flex justify-between text-xl font-bold text-white pt-2"><span>Net Pay</span><span className="text-cyan-400">{selectedRecord.details.net.toLocaleString()} TWD</span></div>
                 </div>
 
-                {/* 加入提領薪資與下載薪資單的並排按鈕 */}
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <button 
                     onClick={() => handleWithdraw(selectedRecord.id)} 
-                    disabled={withdrawnRecords[selectedRecord.id] || isWithdrawing}
-                    className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition ${withdrawnRecords[selectedRecord.id] ? 'bg-green-600/20 text-green-400 cursor-not-allowed border border-green-500/30' : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/20'}`}
+                    disabled={selectedRecord.status === 'Withdrawn' || processingId === selectedRecord.id}
+                    className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition ${selectedRecord.status === 'Withdrawn' ? 'bg-green-600/20 text-green-400 cursor-not-allowed border border-green-500/30' : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/20'}`}
                   >
-                    {isWithdrawing ? <Loader2 className="w-4 h-4 animate-spin" /> : withdrawnRecords[selectedRecord.id] ? <CheckCircle className="w-4 h-4" /> : <Wallet className="w-4 h-4" />}
-                    {isWithdrawing ? 'Processing...' : withdrawnRecords[selectedRecord.id] ? 'Withdrawn' : 'Withdraw'}
+                    {processingId === selectedRecord.id ? <Loader2 className="w-4 h-4 animate-spin" /> : selectedRecord.status === 'Withdrawn' ? <CheckCircle className="w-4 h-4" /> : <Wallet className="w-4 h-4" />}
+                    {processingId === selectedRecord.id ? 'Processing...' : selectedRecord.status === 'Withdrawn' ? 'Withdrawn' : 'Withdraw'}
                   </button>
                   <button onClick={generatePDF} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition">
                     <Download className="w-4 h-4" /> PDF
