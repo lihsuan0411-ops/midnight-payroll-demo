@@ -18,19 +18,23 @@ const EMPLOYEES = [
   { id: "emp01", name: "Alice", title: "Senior Dev", address: "0x71C...976F", base: 75000, allowance: 5000 },
   { id: "emp02", name: "Bob", title: "Product Lead", address: "0x3B2...1A9E", base: 90000, allowance: 8000 },
   { id: "emp03", name: "Charlie", title: "Designer", address: "0x8D4...5C2B", base: 55000, allowance: 3000 },
-  { id: "emp04", name: "Aden", title: "Operation Intern", address: "0x9E3...4A21", base: 40000, allowance: 2000 }, 
+  { id: "emp04", name: "Aden", title: "Operation Intern", address: "0x9E3...4A21", base: 40000, allowance: 2000 }, // 🎉 Aden 登場！
 ];
+
+// 為了展示完整流程，初始資料設為空
+const INITIAL_DB: any[] = []; 
 
 // --- 主程式 ---
 export default function OnChainPayrollApp() {
   const [currentView, setCurrentView] = useState<UserRole>('landing');
-  const [payrollData, setPayrollData] = useState<any[]>([]); 
+  const [payrollData, setPayrollData] = useState<any[]>([]); // 預設為空
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletType, setWalletType] = useState<WalletType>('');
   const [walletAddress, setWalletAddress] = useState('');
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
+  // 1. 網頁載入時，從 LocalStorage 讀取資料
   useEffect(() => {
     const savedDB = localStorage.getItem('payrollDB');
     if (savedDB) {
@@ -38,25 +42,30 @@ export default function OnChainPayrollApp() {
     }
   }, []);
 
+  // 2. 當薪資資料有變動時，自動存入 LocalStorage
   useEffect(() => {
     localStorage.setItem('payrollDB', JSON.stringify(payrollData));
   }, [payrollData]);
 
+  // 新增薪資紀錄
   const addPayrollRecord = (record: any) => {
     setPayrollData(prev => [record, ...prev]);
   };
 
+  // 將薪資狀態改為「已提領」
   const markAsWithdrawn = (id: number) => {
     setPayrollData(prev => prev.map(record => 
       record.id === id ? { ...record, status: 'Withdrawn' } : record
     ));
   };
 
+  // 專為 Demo 設計的模擬錢包連接 (抓取官方資源圖示)
   const connectWallet = async (type: WalletType) => {
     setIsConnecting(true);
     setShowWalletModal(false);
     
     setTimeout(() => {
+      // 依據不同錢包給予不同的模擬地址
       if (type === 'safe') setWalletAddress("eth:0x4A2...MultiSig");
       else if (type === 'metamask') setWalletAddress("0x71C...976F");
       else setWalletAddress("addr_test1...EternlUser");
@@ -101,7 +110,6 @@ export default function OnChainPayrollApp() {
               <button onClick={disconnectWallet} className="p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition" title="Disconnect"><LogOut className="w-4 h-4" /></button>
             </div>
           ) : (
-            // 只有在 employer 或 employee 頁面才顯示 Connect 按鈕
             currentView !== 'landing' && (
               <button onClick={() => setShowWalletModal(true)} className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-2">{isConnecting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Wallet className="w-4 h-4" />} Connect</button>
             )
@@ -115,7 +123,7 @@ export default function OnChainPayrollApp() {
         {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} payrollData={payrollData} onWithdraw={markAsWithdrawn} onLogout={navigateToLanding} />}
       </main>
 
-      {/* 選擇錢包 Modal (根據身分顯示不同選項) */}
+      {/* 選擇錢包 Modal (已將 Logo 替換為官方圖片資源，並基於身分進行過濾) */}
       {showWalletModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-[#111623] border border-white/10 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
@@ -123,25 +131,34 @@ export default function OnChainPayrollApp() {
             <h3 className="text-white font-bold text-center mb-6 text-lg">Select Provider</h3>
             <div className="space-y-3">
               
-              {/* 只有雇主 (Employer) 才會看到多簽錢包選項 */}
+              {/* 核心邏輯：只有在 Employer 視圖下才顯示 Safe 多簽選項 */}
               {currentView === 'employer' && (
                 <>
                   <button onClick={() => connectWallet('safe')} className="w-full bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/20 hover:border-emerald-500/50 p-4 rounded-xl flex items-center gap-4 transition-all group">
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center overflow-hidden p-1.5"><img src="https://avatars.githubusercontent.com/u/102200823?s=200&v=4" alt="Safe" className="w-full h-full object-contain rounded-md" /></div>
+                    {/* 使用 Safe 的官方圖示圖片 (抓取官方資源 URL) */}
+                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center overflow-hidden p-1.5">
+                      <img src="https://avatars.githubusercontent.com/u/102200823?s=200&v=4" alt="Safe" className="w-full h-full object-contain rounded-md" />
+                    </div>
                     <div className="text-left"><div className="text-white font-bold group-hover:text-emerald-400 transition-colors">Safe (Multi-Sig)</div></div>
                   </button>
                   <div className="flex items-center gap-4 py-2"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Standard</span><div className="h-px bg-white/5 flex-1"></div></div>
                 </>
               )}
 
-              {/* 雙方共用的一般錢包 */}
+              {/* 雙方共用的一般錢包 (已砍掉描述) */}
               <button onClick={() => connectWallet('metamask')} className="w-full bg-white/5 hover:bg-orange-900/20 border border-white/5 hover:border-orange-500/50 p-4 rounded-xl flex items-center gap-4 transition-all group">
-                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-2"><img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-full h-full object-contain" /></div>
+                {/* 使用 MetaMask 的官方 Fox 圖片 (抓取官方資源 URL) */}
+                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-2">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-full h-full object-contain" />
+                </div>
                 <div className="text-left"><div className="text-white font-bold group-hover:text-[#F6851B] transition-colors">MetaMask</div></div>
               </button>
               
               <button onClick={() => connectWallet('eternl')} className="w-full bg-white/5 hover:bg-blue-900/20 border border-white/5 hover:border-blue-500/50 p-4 rounded-xl flex items-center gap-4 transition-all group">
-                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-1.5"><img src="https://avatars.githubusercontent.com/u/101235147?s=200&v=4" alt="Eternl" className="w-full h-full object-contain rounded-md" /></div>
+                {/* 使用 Eternl 的官方圖示圖片 (抓取官方資源 URL) */}
+                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-1.5">
+                  <img src="https://avatars.githubusercontent.com/u/101235147?s=200&v=4" alt="Eternl" className="w-full h-full object-contain rounded-md" />
+                </div>
                 <div className="text-left"><div className="text-white font-bold group-hover:text-blue-400 transition-colors">Eternl</div></div>
               </button>
 
@@ -153,7 +170,7 @@ export default function OnChainPayrollApp() {
   );
 }
 
-// --- 首頁 (已移除標籤) ---
+// --- 首頁 (已拿掉特色標籤) ---
 function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   return (
     <div className="max-w-6xl mx-auto p-6 pt-24 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -191,7 +208,7 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   );
 }
 
-// --- 雇主端 ---
+// --- 雇主端 (已移除右側 Log，並修正返回鍵) ---
 function EmployerView({ walletConnected, onConnect, onPaymentSuccess, onNavigateBack }: { walletConnected: boolean, onConnect: () => void, onPaymentSuccess: (record: any) => void, onNavigateBack: () => void }) {
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const [period, setPeriod] = useState(''); 
@@ -219,7 +236,7 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess, onNavigate
             id: Date.now(),
             empId: selectedEmpId,
             period: period,
-            status: 'Pending', 
+            status: 'Pending', // 剛發放時是 Pending 狀態
             hash: '0x' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
             details: { base: emp?.base, allowance: emp?.allowance, bonus: bonus, labor: laborFee, health: healthFee, tax: taxFee, net: totalNet }
         };
@@ -244,6 +261,7 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess, onNavigate
         <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl shadow-2xl">
           <div className="flex justify-between items-start mb-6">
             <div className="flex items-center gap-3">
+               {/* 返回鍵修正：使用 onNavigateBack，斷開錢包並回首頁 */}
                <div className="bg-white/5 hover:bg-white/10 p-2 rounded-full transition cursor-pointer" onClick={onNavigateBack}><ChevronLeft className="text-slate-400"/></div>
                <div><h2 className="text-2xl font-bold text-white">Private Payroll Execution</h2><p className="text-slate-400 text-sm mt-1">Logic runs securely on-chain. Funds settle via Smart Contract.</p></div>
             </div>
@@ -289,26 +307,31 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess, onNavigate
   );
 }
 
-// --- 員工端 ---
+// --- 員工端 (已換成 TWD，單獨列示勞健稅，並加入三階段流程) ---
 function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onLogout }: { walletConnected: boolean, onConnect: () => void, payrollData: any[], onWithdraw: (id: number) => void, onLogout: () => void }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginId, setLoginId] = useState('');
   const [showDetails, setShowDetails] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  
+  // 記錄哪些薪資已經被提領，以及提領中的動畫狀態
   const [processingId, setProcessingId] = useState<number | null>(null);
 
   const handleWithdraw = (id: number) => {
     setProcessingId(id);
+    // 模擬區塊鏈交易處理時間 (2秒)，然後將資料庫狀態改為已提領
     setTimeout(() => {
       setProcessingId(null);
-      onWithdraw(id); 
+      onWithdraw(id); // 更新全域資料庫
     }, 2000);
   };
 
+  // 狀態 1：還沒登入 (顯示帳號密碼輸入框)
   if (!isLoggedIn) {
     return (
         <div className="max-w-md mx-auto p-6 pt-20 animate-in fade-in zoom-in">
           <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl text-center shadow-xl relative">
+            {/* 員工端也加上返回鍵，確保安全登出 */}
             <button onClick={onLogout} className="absolute top-6 left-6 text-slate-500 hover:text-white"><ChevronLeft className="w-6 h-6"/></button>
             <div className="w-16 h-16 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-400"><LogIn className="w-8 h-8"/></div>
             <h2 className="text-2xl font-bold text-white mb-6">Employee Login</h2>
@@ -325,10 +348,12 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
     );
   }
 
+  // 狀態 2：已登入，但沒連錢包 (強制要求連錢包)
   if (isLoggedIn && !walletConnected) {
     return (
       <div className="max-w-md mx-auto p-6 pt-20 animate-in fade-in zoom-in">
         <div className="bg-[#111623] border border-orange-500/30 p-8 rounded-3xl text-center shadow-xl shadow-orange-900/10 relative">
+          {/* 返回鍵修正：使用 onLogout，斷開回首頁 */}
           <button onClick={onLogout} className="absolute top-6 left-6 text-slate-500 hover:text-white"><ChevronLeft className="w-6 h-6"/></button>
           <div className="w-16 h-16 bg-orange-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-orange-400"><Wallet className="w-8 h-8"/></div>
           <h2 className="text-2xl font-bold text-white mb-2">Wallet Required</h2>
@@ -341,6 +366,7 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
     );
   }
 
+  // 狀態 3：已登入，且已連錢包 (顯示薪資單或空畫面)
   const myPayslips = payrollData.filter(p => p.empId === loginId);
 
   const generatePDF = async () => {
@@ -369,6 +395,7 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
     <div className="max-w-4xl mx-auto p-6 animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="flex items-center justify-between mb-8">
         <div><h2 className="text-3xl font-bold text-white">Welcome, {EMPLOYEES.find(e => e.id === loginId)?.name}</h2><p className="text-slate-400">Your Payroll Dashboard</p></div>
+        {/* 安全登出按鈕：除了切換回首頁，同時斷開錢包 */}
         <button onClick={onLogout} className="text-xs text-slate-500 hover:text-white border-b border-slate-700 pb-1">Logout</button>
       </div>
 
@@ -409,8 +436,13 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 animate-in fade-in">
           <div className="bg-[#0f172a] border border-slate-700 w-full max-w-lg rounded-2xl overflow-hidden relative shadow-2xl">
              <button onClick={() => setShowDetails(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X /></button>
+             {/* 提領成功後的頂部 banner (增加了圖示和文字) */}
              <div className="bg-indigo-900/30 p-6 border-b border-indigo-500/20">
-               <div className="flex items-center gap-2 text-green-400 font-bold mb-1"><CheckCircle className="w-5 h-5" /> Verified securely</div>
+               {selectedRecord.status === 'Withdrawn' ? (
+                 <div className="flex items-center gap-2 text-green-400 font-bold mb-1 animate-in zoom-in"><CheckCircle className="w-5 h-5" /> Successfully Withdrawn</div>
+               ) : (
+                 <div className="flex items-center gap-2 text-indigo-400 font-bold mb-1"><Shield className="w-5 h-5" /> Verified securely</div>
+               )}
                <h3 className="text-2xl font-bold text-white">Payslip: {selectedRecord.period}</h3>
              </div>
              <div className="p-8 space-y-6">
@@ -420,12 +452,17 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
                   <div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span>{selectedRecord.details.allowance.toLocaleString()}</span></div>
                   <div className="flex justify-between text-sm text-slate-400"><span>Bonus (Encrypted)</span><span>{selectedRecord.details.bonus.toLocaleString()}</span></div>
                   <div className="h-px bg-white/10 my-2" />
-                  <div className="flex justify-between text-sm text-red-300"><span>Labor Insurance (勞保)</span><span>-{selectedRecord.details.labor.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-sm text-red-300"><span>Health Insurance (健保)</span><span>-{selectedRecord.details.health.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-sm text-red-300"><span>Income Tax (所得稅)</span><span>-{selectedRecord.details.tax.toLocaleString()}</span></div>
+                  
+                  {/* 將扣除項目獨立分開列示 (並更換文字) */}
+                  <div className="flex justify-between text-sm text-red-300"><span>勞工保險 (勞保)</span><span>-{selectedRecord.details.labor.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-red-300"><span>全民健康保險 (健保)</span><span>-{selectedRecord.details.health.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-red-300"><span>個人所得稅 (所得稅)</span><span>-{selectedRecord.details.tax.toLocaleString()}</span></div>
+                  
+                  {/* 幣別改為 TWD */}
                   <div className="flex justify-between text-xl font-bold text-white pt-2"><span>Net Pay</span><span className="text-cyan-400">{selectedRecord.details.net.toLocaleString()} TWD</span></div>
                 </div>
 
+                {/* 重新設計按鈕區 (並排放置提領與下載按鈕) */}
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <button 
                     onClick={() => handleWithdraw(selectedRecord.id)} 
@@ -433,10 +470,10 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
                     className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition ${selectedRecord.status === 'Withdrawn' ? 'bg-green-600/20 text-green-400 cursor-not-allowed border border-green-500/30' : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-900/20'}`}
                   >
                     {processingId === selectedRecord.id ? <Loader2 className="w-4 h-4 animate-spin" /> : selectedRecord.status === 'Withdrawn' ? <CheckCircle className="w-4 h-4" /> : <Wallet className="w-4 h-4" />}
-                    {processingId === selectedRecord.id ? 'Processing...' : selectedRecord.status === 'Withdrawn' ? 'Withdrawn' : 'Withdraw'}
+                    {processingId === selectedRecord.id ? 'Processing...' : selectedRecord.status === 'Withdrawn' ? 'Withdrawn' : 'Withdraw Salary'}
                   </button>
                   <button onClick={generatePDF} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition">
-                    <Download className="w-4 h-4" /> PDF
+                    <Download className="w-4 h-4" /> PDF Payslip
                   </button>
                 </div>
 
