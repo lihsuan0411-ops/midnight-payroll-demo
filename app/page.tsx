@@ -186,7 +186,7 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   );
 }
 
-// --- 雇主端 ---
+// --- 雇主端 (已移除右側 Log，改為置中極簡版) ---
 function EmployerView({ walletConnected, onConnect, onPaymentSuccess, onNavigateBack }: { walletConnected: boolean, onConnect: () => void, onPaymentSuccess: (record: any) => void, onNavigateBack: () => void }) {
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const [period, setPeriod] = useState(''); 
@@ -214,16 +214,16 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess, onNavigate
             id: Date.now(),
             empId: selectedEmpId,
             period: period,
-            status: 'Pending', // 剛發放時是 Pending 狀態
+            status: 'Pending', 
             hash: '0x' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
             details: { base: emp?.base, allowance: emp?.allowance, bonus: bonus, labor: laborFee, health: healthFee, tax: taxFee, net: totalNet }
         };
         onPaymentSuccess(newRecord);
-    }, 7000);
+    }, 6000);
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-right-4 duration-500 relative">
+    <div className="max-w-3xl mx-auto p-6 animate-in fade-in slide-in-from-right-4 duration-500 relative">
       {showSuccess && (
         <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-[#111623] border border-green-500/50 p-8 rounded-3xl shadow-2xl text-center animate-in zoom-in duration-300">
@@ -235,11 +235,10 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess, onNavigate
         </div>
       )}
 
-      <div className="lg:col-span-7 space-y-6">
-        <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl">
+      <div className="space-y-6">
+        <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl shadow-2xl">
           <div className="flex justify-between items-start mb-6">
             <div className="flex items-center gap-3">
-               {/* 修正返回鍵：使用 onNavigateBack，不重新整理網頁 */}
                <div className="bg-white/5 hover:bg-white/10 p-2 rounded-full transition cursor-pointer" onClick={onNavigateBack}><ChevronLeft className="text-slate-400"/></div>
                <div><h2 className="text-2xl font-bold text-white">Private Payroll Execution</h2><p className="text-slate-400 text-sm mt-1">Logic runs securely on-chain. Funds settle via Smart Contract.</p></div>
             </div>
@@ -273,11 +272,14 @@ function EmployerView({ walletConnected, onConnect, onPaymentSuccess, onNavigate
                 <div className="flex justify-between items-center text-lg font-bold pt-4 border-t border-white/10"><span className="text-white">Net Pay</span><span className="text-cyan-400">{totalNet.toLocaleString()} TWD</span></div>
               </div>
             )}
-            <button onClick={handleExecute} disabled={!selectedEmpId || !period || (step > 0 && step < 5)} className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex justify-center items-center gap-2 ${(!selectedEmpId || !period) ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : step === 5 ? 'bg-green-600 text-white' : step > 0 ? 'bg-indigo-600 text-white cursor-wait' : 'bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-lg shadow-cyan-900/20'}`}>{step === 0 && <><Activity className="w-5 h-5" /> Sign & Pay</>}{step > 0 && step < 5 && <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>}{step === 5 && <><CheckCircle className="w-5 h-5" /> Paid</>}</button>
+            <button onClick={handleExecute} disabled={!selectedEmpId || !period || (step > 0 && step < 5)} className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex justify-center items-center gap-2 ${(!selectedEmpId || !period) ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : step === 5 ? 'bg-green-600 text-white' : step > 0 ? 'bg-indigo-600 text-white cursor-wait' : 'bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-lg shadow-cyan-900/20'}`}>
+              {step === 0 && <><Activity className="w-5 h-5" /> Sign & Pay</>}
+              {step > 0 && step < 5 && <><Loader2 className="w-5 h-5 animate-spin" /> {step === 1 ? 'Encrypting Data...' : step === 2 ? 'Generating ZK Proof...' : step === 3 ? 'Bridging to Network...' : 'Settling Funds...'}</>}
+              {step === 5 && <><CheckCircle className="w-5 h-5" /> Paid</>}
+            </button>
           </div>
         </div>
       </div>
-      <div className="lg:col-span-5"><div className="bg-[#05070a] border border-slate-800 rounded-3xl p-6 h-full min-h-[400px] flex flex-col font-mono text-xs shadow-2xl relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-cyan-500 to-purple-500" /><div className="flex items-center gap-2 text-slate-500 border-b border-white/5 pb-4 mb-4"><Terminal className="w-4 h-4" /><span>System Architecture Log</span></div><div className="space-y-4 flex-1 overflow-y-auto">{step === 0 && <div className="text-slate-600 italic">Waiting for command...</div>}{step >= 1 && <div className="animate-in slide-in-from-left-4 fade-in duration-500"><div className="text-indigo-400 font-bold mb-1">[Privacy Layer]</div><div className="text-slate-300">Encrypting sensitive fields (Period: {period})...</div></div>}{step >= 2 && <div className="animate-in slide-in-from-left-4 fade-in duration-500 pt-2 border-t border-white/5"><div className="text-purple-400 font-bold mb-1">[ZK Circuit]</div><div className="text-slate-300">Generating Zero-Knowledge Proof...</div></div>}{step >= 3 && <div className="animate-in slide-in-from-left-4 fade-in duration-500 pt-2 border-t border-white/5"><div className="text-orange-400 font-bold mb-1 flex items-center gap-2">[Relay Oracle] <Globe className="w-3 h-3"/></div><div className="text-slate-300">Bridging Proof to Settlement Layer...</div></div>}{step >= 4 && <div className="animate-in slide-in-from-left-4 fade-in duration-500 pt-2 border-t border-white/5"><div className="text-cyan-400 font-bold mb-1">[Blockchain Layer]</div><div className="text-slate-300">Verifying Proof & Settling Funds...</div><div className="text-green-400 mt-1 font-bold">{`> Transaction Confirmed!`}</div></div>}</div></div></div>
     </div>
   );
 }
@@ -365,7 +367,6 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
     <div className="max-w-4xl mx-auto p-6 animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="flex items-center justify-between mb-8">
         <div><h2 className="text-3xl font-bold text-white">Welcome, {EMPLOYEES.find(e => e.id === loginId)?.name}</h2><p className="text-slate-400">Your Payroll Dashboard</p></div>
-        {/* 安全登出按鈕：除了切換回首頁，同時斷開錢包 */}
         <button onClick={onLogout} className="text-xs text-slate-500 hover:text-white border-b border-slate-700 pb-1">Logout</button>
       </div>
 
