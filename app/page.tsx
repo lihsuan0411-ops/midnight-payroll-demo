@@ -123,7 +123,10 @@ export default function OnChainPayrollApp() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-[#111623] border border-white/10 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
             <button onClick={() => setShowWalletModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5"/></button>
-            <h3 className="text-white font-bold text-center mb-6 text-lg">Select Provider</h3>
+            
+            {/* 文案已修改為 Select Wallet */}
+            <h3 className="text-white font-bold text-center mb-6 text-lg">Select Wallet</h3>
+            
             <div className="space-y-3">
               
               {/* Employer View: Disabled Safe Wallet (Vision Showcase) */}
@@ -313,9 +316,7 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
     setProcessingId(id);
     setTimeout(() => {
       setProcessingId(null);
-      // Update global DB
       onWithdraw(id); 
-      // Update modal state instantly
       setSelectedRecord(prev => prev ? { ...prev, status: 'Claimed' } : null);
       setShowWithdrawSuccessModal(true); 
     }, 2500);
@@ -443,7 +444,6 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
                   <div className="flex justify-between text-sm text-slate-400"><span>Allowance / Bonus</span><span className="text-white font-mono">{(selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
                   <div className="h-px bg-white/5 my-4" />
                   
-                  {/* 分開列示勞保與健保 */}
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Labor Insurance</span><span className="font-mono">-{selectedRecord.details.labor.toLocaleString()}</span></div>
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Health Insurance</span><span className="font-mono">-{selectedRecord.details.health.toLocaleString()}</span></div>
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Income Tax</span><span className="font-mono">-{selectedRecord.details.tax.toLocaleString()}</span></div>
@@ -454,7 +454,6 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mt-8">
-                  {/* Black disabled button when claimed */}
                   <button 
                     onClick={() => handleWithdrawAction(selectedRecord.id)} 
                     disabled={selectedRecord.status === 'Claimed' || processingId === selectedRecord.id}
