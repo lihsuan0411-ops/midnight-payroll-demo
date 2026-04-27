@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Shield, Wallet, Building2, User, ChevronRight, CheckCircle, 
   Lock, Terminal, Activity, FileText, Globe, Server, Eye, Download, 
-  Loader2, X, ChevronLeft, LogOut, LogIn, Calendar, Hexagon, CreditCard
+  Loader2, X, ChevronLeft, LogOut, LogIn, Calendar, Hexagon
 } from 'lucide-react';
 
 // --- TypeScript 定義 ---
@@ -57,7 +57,6 @@ export default function OnChainPayrollApp() {
     setShowWalletModal(false);
     
     setTimeout(() => {
-      // 依據不同錢包給予不同的模擬地址
       if (type === 'safe') setWalletAddress("eth:0x4A2...MultiSig");
       else if (type === 'metamask') setWalletAddress("0x71C...976F");
       else setWalletAddress("addr_test1...EternlUser");
@@ -102,7 +101,10 @@ export default function OnChainPayrollApp() {
               <button onClick={disconnectWallet} className="p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition" title="Disconnect"><LogOut className="w-4 h-4" /></button>
             </div>
           ) : (
-            <button onClick={() => setShowWalletModal(true)} className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-2">{isConnecting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Wallet className="w-4 h-4" />} Connect</button>
+            // 只有在 employer 或 employee 頁面才顯示 Connect 按鈕
+            currentView !== 'landing' && (
+              <button onClick={() => setShowWalletModal(true)} className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-2">{isConnecting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Wallet className="w-4 h-4" />} Connect</button>
+            )
           )}
         </div>
       </nav>
@@ -113,30 +115,36 @@ export default function OnChainPayrollApp() {
         {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} payrollData={payrollData} onWithdraw={markAsWithdrawn} onLogout={navigateToLanding} />}
       </main>
 
-      {/* 選擇錢包 Modal (已移除描述，並加入 Safe 多簽選項) */}
+      {/* 選擇錢包 Modal (根據身分顯示不同選項) */}
       {showWalletModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-[#111623] border border-white/10 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
             <button onClick={() => setShowWalletModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5"/></button>
             <h3 className="text-white font-bold text-center mb-6 text-lg">Select Provider</h3>
             <div className="space-y-3">
-              {/* 企業級多簽錢包 */}
-              <button onClick={() => connectWallet('safe')} className="w-full bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/20 hover:border-emerald-500/50 p-4 rounded-xl flex items-center gap-4 transition-all group">
-                <div className="w-10 h-10 rounded-full bg-emerald-600/20 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors"><Shield className="w-5 h-5"/></div>
-                <div className="text-left"><div className="text-white font-bold group-hover:text-emerald-400 transition-colors">Safe (Multi-Sig)</div></div>
-              </button>
               
-              <div className="flex items-center gap-4 py-2"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Standard</span><div className="h-px bg-white/5 flex-1"></div></div>
+              {/* 只有雇主 (Employer) 才會看到多簽錢包選項 */}
+              {currentView === 'employer' && (
+                <>
+                  <button onClick={() => connectWallet('safe')} className="w-full bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/20 hover:border-emerald-500/50 p-4 rounded-xl flex items-center gap-4 transition-all group">
+                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center overflow-hidden p-1.5"><img src="https://avatars.githubusercontent.com/u/102200823?s=200&v=4" alt="Safe" className="w-full h-full object-contain rounded-md" /></div>
+                    <div className="text-left"><div className="text-white font-bold group-hover:text-emerald-400 transition-colors">Safe (Multi-Sig)</div></div>
+                  </button>
+                  <div className="flex items-center gap-4 py-2"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Standard</span><div className="h-px bg-white/5 flex-1"></div></div>
+                </>
+              )}
 
-              {/* 一般 Web3 錢包 (無描述) */}
+              {/* 雙方共用的一般錢包 */}
               <button onClick={() => connectWallet('metamask')} className="w-full bg-white/5 hover:bg-orange-900/20 border border-white/5 hover:border-orange-500/50 p-4 rounded-xl flex items-center gap-4 transition-all group">
-                <div className="w-10 h-10 rounded-full bg-[#F6851B]/20 border border-[#F6851B]/30 flex items-center justify-center text-[#F6851B] group-hover:bg-[#F6851B] group-hover:text-white transition-colors"><Hexagon className="w-5 h-5"/></div>
+                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-2"><img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-full h-full object-contain" /></div>
                 <div className="text-left"><div className="text-white font-bold group-hover:text-[#F6851B] transition-colors">MetaMask</div></div>
               </button>
+              
               <button onClick={() => connectWallet('eternl')} className="w-full bg-white/5 hover:bg-blue-900/20 border border-white/5 hover:border-blue-500/50 p-4 rounded-xl flex items-center gap-4 transition-all group">
-                <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-colors"><CreditCard className="w-5 h-5"/></div>
+                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-1.5"><img src="https://avatars.githubusercontent.com/u/101235147?s=200&v=4" alt="Eternl" className="w-full h-full object-contain rounded-md" /></div>
                 <div className="text-left"><div className="text-white font-bold group-hover:text-blue-400 transition-colors">Eternl</div></div>
               </button>
+
             </div>
           </div>
         </div>
@@ -145,30 +153,20 @@ export default function OnChainPayrollApp() {
   );
 }
 
-// --- 首頁 ---
+// --- 首頁 (已移除標籤) ---
 function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   return (
     <div className="max-w-6xl mx-auto p-6 pt-24 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6">
+      <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-8">
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400">
           Enterprise-Grade
         </span><br />
         On-Chain Payroll
       </h1>
-      <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
+      <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-16 leading-relaxed">
         Empower your organization with secure, compliant, and confidential salary distribution. Experience the future of Web3 human resources.
       </p>
-      <div className="flex flex-wrap justify-center gap-4 mb-16">
-        <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm cursor-default">
-          <Shield className="w-4 h-4 text-emerald-400" /> GDPR Compliant
-        </div>
-        <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm cursor-default">
-          <Lock className="w-4 h-4 text-purple-400" /> Zero-Knowledge Privacy
-        </div>
-        <div className="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 px-4 py-2 rounded-full shadow-sm cursor-default">
-          <Activity className="w-4 h-4 text-cyan-400" /> Real-time Settlement
-        </div>
-      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
         <button onClick={() => onNavigate('employer')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-cyan-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden shadow-lg shadow-cyan-900/10 hover:shadow-cyan-900/20">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Building2 className="w-24 h-24 text-cyan-500" /></div>
