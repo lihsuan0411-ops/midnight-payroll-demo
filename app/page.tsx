@@ -96,9 +96,7 @@ export default function OnChainPayrollApp() {
         <div className="flex items-center gap-4">
           {walletConnected ? (
             <div className="flex items-center gap-2">
-              <div className="px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs font-mono flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-400 rounded-full"></span>{walletAddress}
-              </div>
+              <div className={`px-4 py-1.5 rounded-full border text-xs font-mono flex items-center gap-2 ${walletType === 'metamask' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : walletType === 'safe' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-blue-500/30 bg-blue-500/10 text-blue-300'}`}><span className="w-2 h-2 bg-green-400 rounded-full"></span>{walletAddress}</div>
               <button onClick={disconnectWallet} className="p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition"><LogOut className="w-4 h-4" /></button>
             </div>
           ) : (
@@ -118,7 +116,7 @@ export default function OnChainPayrollApp() {
         {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} payrollData={payrollData} onWithdraw={markAsWithdrawn} onLogout={navigateToLanding} />}
       </main>
 
-      {/* Wallet Selection Modal (Role-Based Logic) */}
+      {/* Wallet Selection Modal */}
       {showWalletModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-[#111623] border border-white/10 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
@@ -126,7 +124,6 @@ export default function OnChainPayrollApp() {
             <h3 className="text-white font-bold text-center mb-6 text-lg">Select Provider</h3>
             <div className="space-y-3">
               
-              {/* Employer ONLY: Safe Multi-Sig */}
               {currentView === 'employer' && (
                 <>
                   <button onClick={() => connectWallet('safe')} className="w-full bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/20 p-4 rounded-xl flex items-center gap-4 transition-all group">
@@ -139,7 +136,6 @@ export default function OnChainPayrollApp() {
                 </>
               )}
 
-              {/* Shared: MetaMask & Eternl */}
               <button onClick={() => connectWallet('metamask')} className="w-full bg-white/5 hover:bg-orange-900/20 border border-white/5 p-4 rounded-xl flex items-center gap-4 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-2">
                   <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-full h-full object-contain" />
@@ -240,6 +236,7 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
 
   return (
     <div className="max-w-3xl mx-auto p-6 animate-in fade-in duration-500 relative">
+      {/* 雇主發放成功 Modal */}
       {showSuccess && (
         <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4">
             <div className="bg-[#111623] border border-green-500/50 p-8 rounded-3xl shadow-2xl text-center w-full max-w-sm">
@@ -250,13 +247,16 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
             </div>
         </div>
       )}
+
       <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl shadow-2xl">
         <div className="flex items-center gap-3 mb-6">
            <div className="bg-white/5 p-2 rounded-full cursor-pointer" onClick={onNavigateBack}><ChevronLeft className="text-slate-400"/></div>
            <h2 className="text-2xl font-extrabold text-white">Private Payroll Disbursement</h2>
         </div>
+        
         <div className="space-y-6">
           {!walletConnected && <button onClick={onConnect} className="w-full bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-xl text-cyan-400 font-bold flex justify-center gap-2 transition-all"><Wallet /> Connect Enterprise Wallet</button>}
+          
           <div className="grid grid-cols-2 gap-4">
               <select className="bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-cyan-500 cursor-pointer" value={selectedEmpId} onChange={(e) => setSelectedEmpId(e.target.value)}>
                   <option value="">Select Employee...</option>
@@ -267,6 +267,7 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
                   <Calendar className="absolute right-4 top-4 text-slate-500 w-5 h-5 pointer-events-none"/>
               </div>
           </div>
+
           {emp && (
             <div className="bg-slate-900/50 rounded-xl p-6 border border-white/10 animate-in zoom-in">
               <div className="space-y-2 mb-4">
@@ -284,7 +285,7 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
           )}
           <button onClick={handleExecute} disabled={!selectedEmpId || !period || (step > 0 && step < 5)} className={`w-full py-4 rounded-xl font-black text-lg transition-all flex justify-center items-center gap-2 ${(!selectedEmpId || !period) ? 'bg-slate-800 text-slate-500' : step === 5 ? 'bg-green-600 text-white' : step > 0 ? 'bg-indigo-600 text-white' : 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white'}`}>
             {step === 0 && <><Activity /> Sign & Settle</>}
-            {step > 0 && step < 5 && <><Loader2 className="animate-spin" /> {step === 1 ? 'Encrypting Data...' : step === 2 ? 'Generating ZK Proof...' : step === 3 ? 'Relaying to Network...' : 'Settling Funds...'}</>}
+            {step > 0 && step < 5 && <><Loader2 className="animate-spin" /> {step === 1 ? 'Encrypting Data...' : step === 2 ? 'Generating Proof...' : step === 3 ? 'Verifying Signatures...' : 'Settling Funds...'}</>}
             {step === 5 && <><CheckCircle /> Disbursement Complete</>}
           </button>
         </div>
@@ -398,7 +399,9 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
 
       <div className="space-y-4">
         {myRecords.length === 0 ? (
-          <div className="bg-[#111623] border border-dashed border-white/5 p-16 rounded-3xl text-center text-slate-600"><FileText className="w-12 h-12 mx-auto mb-4 opacity-20"/>No pending salary disbursements found.</div>
+          <div className="bg-[#111623] border border-dashed border-white/5 p-16 rounded-3xl text-center text-slate-600">
+            <FileText className="w-12 h-12 mx-auto mb-4 opacity-20"/>No pending salary disbursements found.
+          </div>
         ) : (
           myRecords.map(record => (
             <div key={record.id} className="bg-[#111623] border border-white/5 p-6 rounded-2xl flex items-center justify-between group shadow-lg">
@@ -422,6 +425,8 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 animate-in fade-in backdrop-blur-sm">
           <div className="bg-[#0f172a] border border-slate-800 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative">
              <button onClick={() => setShowDetails(false)} className="absolute top-5 right-5 text-slate-500 hover:text-white transition-colors"><X /></button>
+             
+             {/* Modal Header */}
              <div className="bg-indigo-900/20 p-8 border-b border-white/5">
                <h3 className="text-3xl font-black text-white">{selectedRecord.period} Payslip</h3>
                <div className={`mt-4 flex items-center gap-2 text-sm font-bold ${selectedRecord.status === 'Claimed' ? 'text-green-400' : 'text-indigo-400'}`}>
@@ -429,13 +434,16 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
                  {selectedRecord.status === 'Claimed' ? 'Funds Disbursed to Wallet' : 'Verified Digital Payslip'}
                </div>
              </div>
+             
+             {/* Modal Body - Fully split Labor, Health, Tax */}
              <div className="p-8 space-y-6">
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm text-slate-400"><span>Base Salary (TWD)</span><span className="text-white font-mono">{selectedRecord.details.base.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-sm text-slate-400"><span>Allowance / Bonus</span><span className="text-white font-mono">{(selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span className="text-white font-mono">{selectedRecord.details.allowance.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-slate-400"><span>Bonus</span><span className="text-white font-mono">{selectedRecord.details.bonus.toLocaleString()}</span></div>
                   <div className="h-px bg-white/5 my-4" />
                   
-                  {/* 分開列示勞保與健保 */}
+                  {/* 分開的勞、健、稅 */}
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Labor Insurance</span><span className="font-mono">-{selectedRecord.details.labor.toLocaleString()}</span></div>
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Health Insurance</span><span className="font-mono">-{selectedRecord.details.health.toLocaleString()}</span></div>
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Income Tax</span><span className="font-mono">-{selectedRecord.details.tax.toLocaleString()}</span></div>
