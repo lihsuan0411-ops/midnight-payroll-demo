@@ -236,7 +236,6 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
 
   return (
     <div className="max-w-3xl mx-auto p-6 animate-in fade-in duration-500 relative">
-      {/* 雇主發放成功 Modal */}
       {showSuccess && (
         <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4">
             <div className="bg-[#111623] border border-green-500/50 p-8 rounded-3xl shadow-2xl text-center w-full max-w-sm">
@@ -247,16 +246,13 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
             </div>
         </div>
       )}
-
       <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl shadow-2xl">
         <div className="flex items-center gap-3 mb-6">
            <div className="bg-white/5 p-2 rounded-full cursor-pointer" onClick={onNavigateBack}><ChevronLeft className="text-slate-400"/></div>
            <h2 className="text-2xl font-extrabold text-white">Private Payroll Disbursement</h2>
         </div>
-        
         <div className="space-y-6">
           {!walletConnected && <button onClick={onConnect} className="w-full bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-xl text-cyan-400 font-bold flex justify-center gap-2 transition-all"><Wallet /> Connect Enterprise Wallet</button>}
-          
           <div className="grid grid-cols-2 gap-4">
               <select className="bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-cyan-500 cursor-pointer" value={selectedEmpId} onChange={(e) => setSelectedEmpId(e.target.value)}>
                   <option value="">Select Employee...</option>
@@ -267,7 +263,6 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
                   <Calendar className="absolute right-4 top-4 text-slate-500 w-5 h-5 pointer-events-none"/>
               </div>
           </div>
-
           {emp && (
             <div className="bg-slate-900/50 rounded-xl p-6 border border-white/10 animate-in zoom-in">
               <div className="space-y-2 mb-4">
@@ -285,7 +280,7 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
           )}
           <button onClick={handleExecute} disabled={!selectedEmpId || !period || (step > 0 && step < 5)} className={`w-full py-4 rounded-xl font-black text-lg transition-all flex justify-center items-center gap-2 ${(!selectedEmpId || !period) ? 'bg-slate-800 text-slate-500' : step === 5 ? 'bg-green-600 text-white' : step > 0 ? 'bg-indigo-600 text-white' : 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white'}`}>
             {step === 0 && <><Activity /> Sign & Settle</>}
-            {step > 0 && step < 5 && <><Loader2 className="animate-spin" /> {step === 1 ? 'Encrypting Data...' : step === 2 ? 'Generating Proof...' : step === 3 ? 'Verifying Signatures...' : 'Settling Funds...'}</>}
+            {step > 0 && step < 5 && <><Loader2 className="animate-spin" /> {step === 1 ? 'Encrypting Data...' : step === 2 ? 'Generating ZK Proof...' : step === 3 ? 'Relaying to Network...' : 'Settling Funds...'}</>}
             {step === 5 && <><CheckCircle /> Disbursement Complete</>}
           </button>
         </div>
@@ -313,7 +308,11 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
     setProcessingId(id);
     setTimeout(() => {
       setProcessingId(null);
+      // 1. 全域資料庫更新狀態
       onWithdraw(id); 
+      // 2. 最重要的修補：即時把眼前的模態框資料狀態也改為 Claimed
+      setSelectedRecord(prev => prev ? { ...prev, status: 'Claimed' } : null);
+      // 3. 跳出成功彈窗
       setShowWithdrawSuccessModal(true); 
     }, 2500);
   };
@@ -399,9 +398,7 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
 
       <div className="space-y-4">
         {myRecords.length === 0 ? (
-          <div className="bg-[#111623] border border-dashed border-white/5 p-16 rounded-3xl text-center text-slate-600">
-            <FileText className="w-12 h-12 mx-auto mb-4 opacity-20"/>No pending salary disbursements found.
-          </div>
+          <div className="bg-[#111623] border border-dashed border-white/5 p-16 rounded-3xl text-center text-slate-600"><FileText className="w-12 h-12 mx-auto mb-4 opacity-20"/>No pending salary disbursements found.</div>
         ) : (
           myRecords.map(record => (
             <div key={record.id} className="bg-[#111623] border border-white/5 p-6 rounded-2xl flex items-center justify-between group shadow-lg">
@@ -435,7 +432,7 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
                </div>
              </div>
              
-             {/* Modal Body - Fully split Labor, Health, Tax */}
+             {/* Modal Body */}
              <div className="p-8 space-y-6">
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm text-slate-400"><span>Base Salary (TWD)</span><span className="text-white font-mono">{selectedRecord.details.base.toLocaleString()}</span></div>
