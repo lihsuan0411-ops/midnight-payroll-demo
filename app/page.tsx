@@ -21,14 +21,14 @@ const EMPLOYEES = [
 
 const T = {
   en: {
-    navTitle: "Tempo Payroll",
+    navTitle: "On-Chain Payroll",
     connect: "Connect Wallet",
     langToggle: "繁中",
     comingSoon: "Coming Soon",
     bankApi: "Bank API (Loan / Audit)",
     web3Standard: "Web3 Standard",
     titlePrefix: "Enterprise-Grade",
-    titleSuffix: "Tempo Payroll",
+    titleSuffix: "On-Chain Payroll",
     desc: "Empower your organization with secure, compliant, and confidential salary distribution. Experience the future of Web3 human resources.",
     empPortal: "Employer Portal",
     empPortalDesc: "Manage compensation and execute secure payouts.",
@@ -63,7 +63,7 @@ const T = {
     updated: "Record Updated!",
     done: "Done",
     employeeTitle: "Employee Portal Access",
-    accId: "Account ID (e.g., Aden)",
+    accId: "Account ID",
     pwd: "Password",
     signIn: "Sign In",
     walletReq: "Wallet ID Required",
@@ -106,20 +106,17 @@ const T = {
     verifiedZk: "Verified ZK-Rollup Transaction",
     empId: "Employee Identifier",
     disbPeriod: "Disbursement Period",
-    gross: "Gross Allowances",
-    deductions: "Total Deductions",
-    netSettled: "Net Settled Amount",
     closeIns: "Close Inspector"
   },
   zh: {
-    navTitle: "Tempo Payroll",
+    navTitle: "鏈上薪資系統",
     connect: "連接錢包",
     langToggle: "EN",
     comingSoon: "待推出",
     bankApi: "民間銀行 API (貸款/聯徵)",
     web3Standard: "Web3 標準協議",
     titlePrefix: "企業級",
-    titleSuffix: "Tempo 鏈上發薪方案",
+    titleSuffix: "鏈上發薪方案",
     desc: "透過安全、合規且極具隱私的方式進行薪資發放。體驗 Web3 時代的人力資源管理未來。",
     empPortal: "雇主發放入口",
     empPortalDesc: "管理薪資結構並執行安全的鏈上發放。",
@@ -154,7 +151,7 @@ const T = {
     updated: "紀錄更新成功！",
     done: "完成",
     employeeTitle: "員工入口登入",
-    accId: "員工帳號 (例如: Aden)",
+    accId: "員工帳號",
     pwd: "登入密碼",
     signIn: "安全登入",
     walletReq: "需要錢包驗證",
@@ -197,43 +194,20 @@ const T = {
     verifiedZk: "已驗證的 ZK-Rollup 交易",
     empId: "員工識別碼",
     disbPeriod: "撥款週期",
-    gross: "應發總額",
-    deductions: "代扣總額",
-    netSettled: "鏈上結算淨額",
     closeIns: "關閉視窗"
   }
 };
 
-// --- 純程式碼設計的 Tempo 高質感 Logo ---
-function TempoLogo() {
+// --- 純 CSS 繪製的高科技節點 Logo ---
+function BrandLogo() {
   return (
-    <div className="relative flex items-center justify-center w-10 h-10 rounded-[12px] bg-[#0a0e17] border border-white/10 shadow-[0_0_15px_rgba(59,130,246,0.3)] group-hover:scale-105 transition-all">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-[12px] blur-sm"></div>
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 relative z-10">
-        {/* Left Curve (Blue) */}
-        <path d="M10 16H6C4.34315 16 3 14.6569 3 13C3 11.3431 4.34315 10 6 10H10" stroke="url(#tempoBlue)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        {/* Right Curve (Purple) */}
-        <path d="M14 8H18C19.6569 8 21 9.34315 21 11C21 12.6569 19.6569 14 18 14H14" stroke="url(#tempoPurple)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        {/* Middle Flow Line */}
-        <path d="M8 12H16" stroke="url(#tempoGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        {/* Top/Bottom Dash Lines for speed effect */}
-        <path d="M3.5 8.5H5.5" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M18.5 15.5H20.5" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round"/>
-        <defs>
-          <linearGradient id="tempoBlue" x1="3" y1="10" x2="10" y2="16" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#3B82F6"/>
-            <stop offset="1" stopColor="#60A5FA"/>
-          </linearGradient>
-          <linearGradient id="tempoPurple" x1="14" y1="8" x2="21" y2="14" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#8B5CF6"/>
-            <stop offset="1" stopColor="#A78BFA"/>
-          </linearGradient>
-          <linearGradient id="tempoGrad" x1="8" y1="12" x2="16" y2="12" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#3B82F6"/>
-            <stop offset="1" stopColor="#8B5CF6"/>
-          </linearGradient>
-        </defs>
-      </svg>
+    <div className="flex items-center gap-3 group">
+      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 p-[1.5px] shadow-[0_0_15px_rgba(59,130,246,0.4)] group-hover:scale-105 transition-all">
+        <div className="w-full h-full bg-[#0a0e17] rounded-[10px] flex items-center justify-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-cyan-400/10 blur-md"></div>
+          <Hexagon className="w-6 h-6 text-cyan-400 relative z-10 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -303,7 +277,7 @@ export default function OnChainPayrollApp() {
         </div>
       )}
 
-      {/* Background Effects (藍紫漸層感) */}
+      {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-blue-900/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[100px]" />
@@ -311,7 +285,7 @@ export default function OnChainPayrollApp() {
 
       <nav className="border-b border-white/5 bg-[#0a0e17]/80 backdrop-blur-md sticky top-0 z-50 h-20 flex items-center justify-between px-8">
         <div className="flex items-center gap-4 cursor-pointer group" onClick={navigateToLanding}>
-          <TempoLogo />
+          <BrandLogo />
           <div className="font-bold text-white text-xl tracking-tight hidden md:block group-hover:text-blue-400 transition-colors">{t.navTitle}</div>
         </div>
         <div className="flex items-center gap-6">
@@ -344,7 +318,7 @@ export default function OnChainPayrollApp() {
         {currentView === 'auditor' && <AuditorView payrollData={payrollData} walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} onNavigateBack={navigateToLanding} t={t} />}
       </main>
 
-      {/* Wallet Selection Modal */}
+      {/* Wallet Selection Modal (圖示絕對網址修復版) */}
       {showWalletModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-[#111623] border border-white/10 w-full max-w-sm rounded-3xl p-8 shadow-2xl relative shadow-blue-900/10">
@@ -387,7 +361,6 @@ export default function OnChainPayrollApp() {
               
               <button onClick={() => connectWallet('eternl')} className="w-full bg-white/5 hover:bg-blue-900/20 border border-white/5 hover:border-blue-500/40 p-5 rounded-2xl flex items-center gap-4 transition-all group active:scale-[0.98]">
                 <div className="w-12 h-12 rounded-full bg-[#0a0e17] flex items-center justify-center overflow-hidden border border-blue-500/30 p-1 group-hover:bg-blue-900/20 transition-colors">
-                  {/* 使用公開且絕對不會破圖的 Eternl 官方 GitHub 頭像 */}
                   <img src="https://avatars.githubusercontent.com/u/101235147?s=200&v=4" alt="Eternl" className="w-full h-full object-contain rounded-md" />
                 </div>
                 <div className="text-left font-bold text-white group-hover:text-blue-400 transition-colors">Eternl</div>
@@ -557,10 +530,12 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [showWithdrawSuccessModal, setShowWithdrawSuccessModal] = useState(false);
 
+  // 員工登入驗證：支援 Aden, emp01, emp02
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginId === 'Aden') setIsLoggedIn(true);
-    else alert("Invalid ID");
+    const foundEmp = EMPLOYEES.find(emp => emp.id === loginId);
+    if (foundEmp) setIsLoggedIn(true);
+    else alert(t.accId + " Invalid");
   };
 
   const handleWithdrawAction = (id: number) => {
@@ -605,6 +580,7 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
   }
 
   const myRecords = payrollData.filter(p => p.empId === loginId);
+  const employeeDetails = EMPLOYEES.find(e => e.id === loginId);
 
   const generatePDF = async () => {
     try {
@@ -612,9 +588,9 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
       const autoTable = (await import("jspdf-autotable")).default;
       const doc = new jsPDF();
       const d = selectedRecord.details;
-      doc.setFontSize(20); doc.text("Tempo Payroll Receipt", 14, 22);
+      doc.setFontSize(20); doc.text("On-Chain Payroll Receipt", 14, 22);
       doc.setFontSize(10); doc.text("Officially Verified", 14, 30);
-      doc.text(`Employee: Aden`, 14, 42);
+      doc.text(`Employee: ${employeeDetails?.name || loginId}`, 14, 42);
       doc.text(`Period: ${selectedRecord.period}`, 14, 48);
       doc.text(`TxHash: ${selectedRecord.hash}`, 14, 54);
       (autoTable as any)(doc, {
@@ -629,7 +605,7 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
           ['TOTAL NET PAY', { content: d.net.toLocaleString(), styles: { fontStyle: 'bold' } }]
         ],
       });
-      doc.save(`Aden_Payslip_${selectedRecord.period}.pdf`);
+      doc.save(`${employeeDetails?.name || loginId}_Payslip_${selectedRecord.period}.pdf`);
     } catch (err) { alert("PDF Generation Failed"); }
   };
 
@@ -647,7 +623,7 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
       )}
 
       <div className="flex items-center justify-between mb-10">
-        <div><h2 className="text-4xl font-black text-white tracking-tighter">{t.welcome}, Aden</h2><p className="text-slate-500 text-sm mt-1 font-bold uppercase tracking-widest">{t.dashboard}</p></div>
+        <div><h2 className="text-4xl font-black text-white tracking-tighter">{t.welcome}, {employeeDetails?.name || loginId}</h2><p className="text-slate-500 text-sm mt-1 font-bold uppercase tracking-widest">{t.dashboard}</p></div>
         <button onClick={onLogout} className="text-xs font-black text-slate-500 hover:text-white border-b-2 border-slate-800 pb-1 uppercase">{t.logout}</button>
       </div>
 
@@ -689,7 +665,8 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
              <div className="p-10 space-y-8">
                 <div className="space-y-4">
                   <div className="flex justify-between text-sm text-slate-400 font-bold uppercase tracking-widest"><span>{t.base}</span><span className="text-white font-mono">{selectedRecord.details.base.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-sm text-slate-400 font-bold uppercase tracking-widest"><span>{t.allowance} / {t.bonus}</span><span className="text-white font-mono">{(selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-slate-400 font-bold uppercase tracking-widest"><span>{t.allowance}</span><span className="text-white font-mono">{selectedRecord.details.allowance.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-slate-400 font-bold uppercase tracking-widest"><span>Bonus</span><span className="text-white font-mono">{selectedRecord.details.bonus.toLocaleString()}</span></div>
                   <div className="h-px bg-white/10 my-6" />
                   
                   <div className="flex justify-between text-xs text-red-400/80 font-black italic uppercase tracking-tighter"><span>{t.labor}</span><span className="font-mono">-{selectedRecord.details.labor.toLocaleString()}</span></div>
@@ -740,6 +717,24 @@ function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack, 
     }
   }, [walletConnected, authSuccess]);
 
+  const downloadCSV = () => {
+    const headers = ["Transaction ID", "Employee", "Period", "Base Salary", "Allowances", "Bonus", "Labor Ins.", "Health Ins.", "Tax", "Net Payout", "Status", "Blockchain Hash"];
+    const rows = payrollData.map(r => [
+      r.id, r.empId, r.period, 
+      r.details.base, r.details.allowance, r.details.bonus, 
+      r.details.labor, r.details.health, r.details.tax, 
+      r.details.net, r.status, r.hash
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "Audit_Compliance_Log.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6 animate-in fade-in duration-500 relative">
       <div className="bg-[#111623] border border-emerald-500/10 p-12 rounded-[3.5rem] shadow-2xl relative overflow-hidden">
@@ -751,6 +746,11 @@ function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack, 
                <p className="text-emerald-400/80 text-sm mt-1 font-bold uppercase tracking-widest">{t.auditSub}</p>
              </div>
           </div>
+          {authSuccess && payrollData.length > 0 && (
+             <button onClick={downloadCSV} className="bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/20 text-emerald-400 px-6 py-3 rounded-xl text-xs font-black tracking-widest uppercase transition-all shadow-inner active:scale-95">
+               <Download className="w-4 h-4 mr-2 inline" /> {t.exportCsv}
+             </button>
+          )}
         </div>
 
         {!walletConnected ? (
@@ -819,13 +819,20 @@ function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack, 
                <div className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-emerald-400"><Shield className="w-5 h-5"/> {t.verifiedZk}</div>
                <div className="mt-6 text-[9px] text-slate-500 font-mono break-all bg-black/60 p-4 rounded-2xl border border-white/5 shadow-inner leading-relaxed">HASH: {selectedRecord.hash}</div>
              </div>
+             
+             {/* 審計端資料細節：逐條列示 */}
              <div className="p-10 space-y-5">
                 <div className="flex justify-between text-xs font-black uppercase tracking-widest text-slate-500 border-b border-white/5 pb-3"><span>{t.empId}</span><span className="text-white font-black">{selectedRecord.empId}</span></div>
                 <div className="flex justify-between text-xs font-black uppercase tracking-widest text-slate-500 border-b border-white/5 pb-3"><span>{t.disbPeriod}</span><span className="text-white">{selectedRecord.period}</span></div>
                 <div className="flex justify-between text-xs font-black uppercase tracking-widest text-slate-500 border-b border-white/5 pb-3"><span>{t.colStatus}</span><span className={selectedRecord.status === 'Claimed' ? 'text-green-400' : 'text-amber-400'}>{selectedRecord.status === 'Claimed' ? t.disbursed : t.ready}</span></div>
+                
                 <div className="pt-6 space-y-3">
-                  <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest"><span>{t.gross}</span><span className="font-mono">{(selectedRecord.details.base + selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
-                  <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest"><span>{t.deductions}</span><span className="font-mono text-red-400/60">-{ (selectedRecord.details.labor + selectedRecord.details.health + selectedRecord.details.tax).toLocaleString()}</span></div>
+                  <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest"><span>{t.base}</span><span className="font-mono text-white">{selectedRecord.details.base.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest"><span>{t.allowance} / Bonus</span><span className="font-mono text-white">{(selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
+                  <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest"><span>{t.labor}</span><span className="font-mono text-red-400/60">-{selectedRecord.details.labor.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest"><span>{t.health}</span><span className="font-mono text-red-400/60">-{selectedRecord.details.health.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest"><span>{t.tax}</span><span className="font-mono text-red-400/60">-{selectedRecord.details.tax.toLocaleString()}</span></div>
+                  
                   <div className="flex justify-between items-center pt-8 border-t border-white/10 mt-8">
                     <span className="text-slate-300 font-black tracking-widest uppercase text-xs">{t.netSettled}</span>
                     <span className="text-emerald-400 text-3xl font-black font-mono">{selectedRecord.details.net.toLocaleString()} TWD</span>
