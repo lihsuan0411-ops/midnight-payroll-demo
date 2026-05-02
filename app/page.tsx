@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Shield, Wallet, Building2, User, ChevronRight, CheckCircle, 
   Terminal, Activity, FileText, Globe, Server, Eye, Download, 
-  Loader2, X, ChevronLeft, LogOut, LogIn, Calendar, Hexagon, BadgeCheck, FileSearch, Database, LockKeyhole
+  Loader2, X, ChevronLeft, LogOut, LogIn, Calendar, BadgeCheck, FileSearch, Database, LockKeyhole
 } from 'lucide-react';
 
 // --- TypeScript Definitions ---
@@ -25,10 +25,11 @@ const EMPLOYEES = [
 const T = {
   en: {
     navTitle: "On-chain Payroll",
-    privacy: "Privacy Network",
-    mainnet: "Mainnet",
     connect: "Connect Wallet",
     langToggle: "繁中",
+    comingSoon: "Coming Soon",
+    bankApi: "Bank API (Loan / Audit)",
+    web3Standard: "Web3 Standard",
     // Landing
     titlePrefix: "Enterprise-Grade",
     titleSuffix: "On-Chain Payroll",
@@ -46,7 +47,7 @@ const T = {
     employerTitle: "Private Payroll Disbursement",
     connectEmp: "Connect Enterprise Wallet",
     selectEmp: "1. Select Employee",
-    selectPeriod: "2. Select Period",
+    currentPeriod: "2. Current Period (Locked)",
     base: "Base Salary (TWD)",
     allowance: "Allowance",
     bonus: "Discretionary Bonus",
@@ -119,10 +120,11 @@ const T = {
   },
   zh: {
     navTitle: "鏈上薪資系統",
-    privacy: "隱私網路",
-    mainnet: "主網",
     connect: "連接錢包",
     langToggle: "EN",
+    comingSoon: "待推出",
+    bankApi: "民間銀行 API (貸款/聯徵)",
+    web3Standard: "Web3 標準協議",
     // Landing
     titlePrefix: "企業級",
     titleSuffix: "鏈上發薪方案",
@@ -140,7 +142,7 @@ const T = {
     employerTitle: "隱私薪資發放控制台",
     connectEmp: "連接企業錢包",
     selectEmp: "1. 選擇員工",
-    selectPeriod: "2. 選擇發放週期",
+    currentPeriod: "2. 當前週期 (系統鎖定)",
     base: "本薪 (TWD)",
     allowance: "固定津貼",
     bonus: "浮動獎金",
@@ -243,7 +245,6 @@ export default function OnChainPayrollApp() {
     setIsConnecting(true);
     setShowWalletModal(false);
     setTimeout(() => {
-      // 根據身分模擬不同地址，展示權限差異
       if (currentView === 'auditor') setWalletAddress("0xAUDIT...4242");
       else if (type === 'metamask') setWalletAddress("0x71C...976F");
       else setWalletAddress("addr_test1...User");
@@ -286,17 +287,17 @@ export default function OnChainPayrollApp() {
       </div>
 
       <nav className="border-b border-white/5 bg-[#0a0e17]/80 backdrop-blur-md sticky top-0 z-50 h-16 flex items-center justify-between px-6">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={navigateToLanding}>
-          <div className="bg-gradient-to-br from-cyan-500 to-indigo-600 p-2 rounded-lg"><Hexagon className="w-5 h-5 text-white" /></div>
+        <div className="flex items-center gap-4 cursor-pointer" onClick={navigateToLanding}>
+          {/* 高質感 Web3 節點光暈 Logo */}
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-cyan-500 to-emerald-500 p-[1.5px] shadow-lg shadow-cyan-900/20">
+            <div className="w-full h-full bg-[#0a0e17] rounded-[10px] flex items-center justify-center relative overflow-hidden">
+               <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-transparent"></div>
+               <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)] animate-pulse"></div>
+            </div>
+          </div>
           <div className="font-bold text-white text-lg tracking-wide hidden md:block">{t.navTitle}</div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex gap-3 text-[10px] font-mono border-r border-white/10 pr-4">
-            <div className="flex items-center gap-1 text-slate-400"><span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span> {t.privacy}</div>
-            <div className="flex items-center gap-1 text-slate-400"><span className="w-2 h-2 rounded-full bg-cyan-500"></span> {t.mainnet}</div>
-          </div>
-
-          {/* Language Toggle */}
           <button onClick={toggleLang} className="text-xs font-bold text-slate-400 hover:text-white px-2 py-1 rounded bg-white/5 border border-white/10 transition-colors">
             {t.langToggle}
           </button>
@@ -329,6 +330,36 @@ export default function OnChainPayrollApp() {
             <button onClick={() => setShowWalletModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5"/></button>
             <h3 className="text-white font-bold text-center mb-6 text-lg">{lang === 'en' ? 'Select Wallet' : '選擇錢包'}</h3>
             <div className="space-y-3">
+              
+              {/* Employer ONLY: Safe Wallet (Disabled Vision) */}
+              {currentView === 'employer' && (
+                <>
+                  <button disabled className="w-full bg-emerald-900/5 border border-emerald-500/20 p-4 rounded-xl flex items-center gap-4 cursor-not-allowed opacity-50 relative">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-emerald-500 uppercase tracking-widest border border-emerald-500/30 px-2 py-1 rounded bg-emerald-500/10">{t.comingSoon}</div>
+                    <div className="w-10 h-10 rounded-full bg-[#111623] flex items-center justify-center overflow-hidden border border-emerald-500/30 p-1">
+                      <img src="/safe.png" alt="Safe" className="w-full h-full object-contain grayscale" />
+                    </div>
+                    <div className="text-left font-bold text-slate-300">Safe (Multi-Sig)</div>
+                  </button>
+                  <div className="flex items-center gap-4 py-1"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t.web3Standard}</span><div className="h-px bg-white/5 flex-1"></div></div>
+                </>
+              )}
+
+              {/* Auditor ONLY: Traditional Bank API (Disabled Vision) */}
+              {currentView === 'auditor' && (
+                <>
+                  <button disabled className="w-full bg-blue-900/5 border border-blue-500/20 p-4 rounded-xl flex items-center gap-4 cursor-not-allowed opacity-50 relative">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-blue-500 uppercase tracking-widest border border-blue-500/30 px-2 py-1 rounded bg-blue-500/10">{t.comingSoon}</div>
+                    <div className="w-10 h-10 rounded-full bg-[#111623] flex items-center justify-center overflow-hidden border border-blue-500/30 p-2">
+                      <Building2 className="w-full h-full text-blue-400" />
+                    </div>
+                    <div className="text-left font-bold text-slate-300">{t.bankApi}</div>
+                  </button>
+                  <div className="flex items-center gap-4 py-1"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t.web3Standard}</span><div className="h-px bg-white/5 flex-1"></div></div>
+                </>
+              )}
+
+              {/* Standard Wallets */}
               <button onClick={() => connectWallet('metamask')} className="w-full bg-white/5 hover:bg-orange-900/20 border border-white/5 p-4 rounded-xl flex items-center gap-4 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-2">
                   <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-full h-full object-contain" />
@@ -342,6 +373,7 @@ export default function OnChainPayrollApp() {
                 </div>
                 <div className="text-left font-bold text-white group-hover:text-blue-400 transition-colors">Eternl</div>
               </button>
+
             </div>
           </div>
         </div>
@@ -395,7 +427,10 @@ function LandingView({ onNavigate, t }: { onNavigate: (role: UserRole) => void, 
 
 function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSuccess, onPaymentUpdate, onSetAlert, onNavigateBack, t }: any) {
   const [selectedEmpId, setSelectedEmpId] = useState('');
-  const [period, setPeriod] = useState(''); 
+  
+  // Hardcoded to current period, removed date selection input
+  const period = "2026-05"; 
+  
   const [bonus, setBonus] = useState(0);
   const [step, setStep] = useState(0); 
   const [showSuccess, setShowSuccess] = useState(false);
@@ -444,7 +479,7 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
                 <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4 animate-bounce" />
                 <h2 className="text-2xl font-black text-white mb-2">{successType === 'Added' ? t.added : t.updated}</h2>
                 <p className="text-slate-400 mb-6 text-sm">Period: {period}<br/>Data encrypted and synced to the privacy layer.</p>
-                <button onClick={() => { setShowSuccess(false); setStep(0); setSelectedEmpId(''); setPeriod(''); setBonus(0); }} className="w-full bg-green-600 hover:bg-green-500 text-white py-2.5 rounded-xl font-bold">{t.done}</button>
+                <button onClick={() => { setShowSuccess(false); setStep(0); setSelectedEmpId(''); setBonus(0); }} className="w-full bg-green-600 hover:bg-green-500 text-white py-2.5 rounded-xl font-bold">{t.done}</button>
             </div>
         </div>
       )}
@@ -455,6 +490,7 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
         </div>
         <div className="space-y-6">
           {!walletConnected && <button onClick={onConnect} className="w-full bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-xl text-cyan-400 font-bold flex justify-center gap-2 transition-all"><Wallet /> {t.connectEmp}</button>}
+          
           <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">{t.selectEmp}</label>
@@ -463,11 +499,16 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
                     {EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.name} - {e.title}</option>)}
                 </select>
               </div>
-              <div className="relative">
-                  <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">{t.selectPeriod}</label>
-                  <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-cyan-500"/>
+              <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">{t.currentPeriod}</label>
+                  {/* System Locked Period Display */}
+                  <div className="w-full bg-[#0a0e17] border border-white/5 rounded-xl p-4 text-slate-400 font-mono flex items-center justify-between cursor-not-allowed">
+                      <span>{period}</span>
+                      <LockKeyhole className="w-4 h-4 text-slate-600" />
+                  </div>
               </div>
           </div>
+
           {emp && (
             <div className="bg-slate-900/50 rounded-xl p-6 border border-white/10 animate-in zoom-in">
               <div className="space-y-2 mb-4">
@@ -686,7 +727,7 @@ function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack, 
       setTimeout(() => {
         setIsVerifying(false);
         setAuthSuccess(true);
-      }, 1500); // Simulate Smart Contract checking
+      }, 1500); 
     }
   }, [walletConnected, authSuccess]);
 
