@@ -6,11 +6,11 @@ import React, { useState, useEffect } from 'react';
 import { 
   Shield, Wallet, Building2, User, ChevronRight, CheckCircle, 
   Terminal, Activity, FileText, Globe, Server, Eye, Download, 
-  Loader2, X, ChevronLeft, LogOut, LogIn, Calendar, Hexagon, BadgeCheck
+  Loader2, X, ChevronLeft, LogOut, LogIn, Calendar, Hexagon, BadgeCheck, FileSearch, Database
 } from 'lucide-react';
 
 // --- TypeScript Definitions ---
-type UserRole = 'landing' | 'employer' | 'employee';
+type UserRole = 'landing' | 'employer' | 'employee' | 'auditor';
 type WalletType = 'metamask' | 'eternl' | 'safe' | '';
 
 // --- Mock Data ---
@@ -47,7 +47,6 @@ export default function OnChainPayrollApp() {
     setIsConnecting(true);
     setShowWalletModal(false);
     setTimeout(() => {
-      // Safe is strictly disabled in UI now, but keeping logic just in case
       if (type === 'safe') setWalletAddress("eth:0x4A2...MultiSig");
       else if (type === 'metamask') setWalletAddress("0x71C...976F");
       else setWalletAddress("addr_test1...User");
@@ -71,7 +70,6 @@ export default function OnChainPayrollApp() {
 
   return (
     <div className="min-h-screen bg-[#0a0e17] text-slate-200 font-sans selection:bg-cyan-500/30 pb-20 relative">
-      {/* Global Alert Modal */}
       {duplicateAlert && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-[#111623] border border-amber-500/30 w-full max-w-sm rounded-2xl p-8 shadow-2xl text-center">
@@ -83,13 +81,11 @@ export default function OnChainPayrollApp() {
         </div>
       )}
 
-      {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-indigo-900/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-900/10 rounded-full blur-[100px]" />
       </div>
 
-      {/* Navbar */}
       <nav className="border-b border-white/5 bg-[#0a0e17]/80 backdrop-blur-md sticky top-0 z-50 h-16 flex items-center justify-between px-6">
         <div className="flex items-center gap-3 cursor-pointer" onClick={navigateToLanding}>
           <div className="bg-gradient-to-br from-cyan-500 to-indigo-600 p-2 rounded-lg"><Hexagon className="w-5 h-5 text-white" /></div>
@@ -98,7 +94,7 @@ export default function OnChainPayrollApp() {
         <div className="flex items-center gap-4">
           {walletConnected ? (
             <div className="flex items-center gap-2">
-              <div className={`px-4 py-1.5 rounded-full border text-xs font-mono flex items-center gap-2 ${walletType === 'metamask' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : 'border-blue-500/30 bg-blue-500/10 text-blue-300'}`}><span className="w-2 h-2 bg-green-400 rounded-full"></span>{walletAddress}</div>
+              <div className={`px-4 py-1.5 rounded-full border text-xs font-mono flex items-center gap-2 ${walletType === 'metamask' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : walletType === 'safe' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-blue-500/30 bg-blue-500/10 text-blue-300'}`}><span className="w-2 h-2 bg-green-400 rounded-full"></span>{walletAddress}</div>
               <button onClick={disconnectWallet} className="p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition"><LogOut className="w-4 h-4" /></button>
             </div>
           ) : (
@@ -111,11 +107,11 @@ export default function OnChainPayrollApp() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="relative z-10">
         {currentView === 'landing' && <LandingView onNavigate={setCurrentView} />}
         {currentView === 'employer' && <EmployerView payrollData={payrollData} walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} onPaymentSuccess={addPayrollRecord} onPaymentUpdate={updatePayrollRecord} onSetAlert={setDuplicateAlert} onNavigateBack={navigateToLanding} />}
         {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} payrollData={payrollData} onWithdraw={markAsWithdrawn} onLogout={navigateToLanding} />}
+        {currentView === 'auditor' && <AuditorView payrollData={payrollData} walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} onNavigateBack={navigateToLanding} />}
       </main>
 
       {/* Wallet Selection Modal */}
@@ -123,13 +119,9 @@ export default function OnChainPayrollApp() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-[#111623] border border-white/10 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
             <button onClick={() => setShowWalletModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5"/></button>
-            
-            {/* 文案已修改為 Select Wallet */}
             <h3 className="text-white font-bold text-center mb-6 text-lg">Select Wallet</h3>
-            
             <div className="space-y-3">
               
-              {/* Employer View: Disabled Safe Wallet (Vision Showcase) */}
               {currentView === 'employer' && (
                 <>
                   <button disabled className="w-full bg-emerald-900/5 border border-emerald-500/20 p-4 rounded-xl flex items-center gap-4 cursor-not-allowed opacity-50 relative">
@@ -143,7 +135,6 @@ export default function OnChainPayrollApp() {
                 </>
               )}
 
-              {/* Standard Wallets */}
               <button onClick={() => connectWallet('metamask')} className="w-full bg-white/5 hover:bg-orange-900/20 border border-white/5 p-4 rounded-xl flex items-center gap-4 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-2">
                   <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-full h-full object-contain" />
@@ -169,12 +160,14 @@ export default function OnChainPayrollApp() {
 // --- Landing View ---
 function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   return (
-    <div className="max-w-6xl mx-auto p-6 pt-24 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="max-w-7xl mx-auto p-6 pt-24 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
       <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-8">
         <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400">Enterprise-Grade</span><br />On-Chain Payroll
       </h1>
       <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-16 leading-relaxed">Empower your organization with secure, compliant, and confidential salary distribution. Experience the future of Web3 human resources.</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+      
+      {/* 變更為 3 欄位設計 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
         <button onClick={() => onNavigate('employer')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-cyan-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden shadow-lg">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Building2 className="w-24 h-24 text-cyan-500" /></div>
           <div className="relative z-10">
@@ -184,6 +177,7 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
             <div className="inline-flex items-center text-cyan-400 text-sm font-bold group-hover:gap-2 transition-all">Launch Dashboard <ChevronRight className="w-4 h-4 ml-1" /></div>
           </div>
         </button>
+
         <button onClick={() => onNavigate('employee')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-purple-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden shadow-lg">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><User className="w-24 h-24 text-purple-500" /></div>
           <div className="relative z-10">
@@ -191,6 +185,17 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
             <h2 className="text-2xl font-bold text-white mb-2">Employee Portal</h2>
             <p className="text-slate-400 text-sm mb-6">Securely log in to claim salary and download official payslips.</p>
             <div className="inline-flex items-center text-purple-400 text-sm font-bold group-hover:gap-2 transition-all">Claim & Verify <ChevronRight className="w-4 h-4 ml-1" /></div>
+          </div>
+        </button>
+
+        {/* 新增的 Auditor Portal */}
+        <button onClick={() => onNavigate('auditor')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-emerald-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden shadow-lg">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><FileSearch className="w-24 h-24 text-emerald-500" /></div>
+          <div className="relative z-10">
+            <div className="w-12 h-12 bg-emerald-900/30 rounded-xl flex items-center justify-center mb-4 text-emerald-400 group-hover:scale-110 transition-transform"><Database className="w-6 h-6" /></div>
+            <h2 className="text-2xl font-bold text-white mb-2">Auditor Portal</h2>
+            <p className="text-slate-400 text-sm mb-6">Inspect compliance logs and export audit reports.</p>
+            <div className="inline-flex items-center text-emerald-400 text-sm font-bold group-hover:gap-2 transition-all">Access Logs <ChevronRight className="w-4 h-4 ml-1" /></div>
           </div>
         </button>
       </div>
@@ -428,7 +433,6 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
           <div className="bg-[#0f172a] border border-slate-800 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative">
              <button onClick={() => setShowDetails(false)} className="absolute top-5 right-5 text-slate-500 hover:text-white transition-colors"><X /></button>
              
-             {/* Modal Header */}
              <div className="bg-indigo-900/20 p-8 border-b border-white/5">
                <h3 className="text-3xl font-black text-white">{selectedRecord.period} Payslip</h3>
                <div className={`mt-4 flex items-center gap-2 text-sm font-bold ${selectedRecord.status === 'Claimed' ? 'text-green-400' : 'text-indigo-400'}`}>
@@ -437,17 +441,14 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
                </div>
              </div>
              
-             {/* Modal Body */}
              <div className="p-8 space-y-6">
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm text-slate-400"><span>Base Salary (TWD)</span><span className="text-white font-mono">{selectedRecord.details.base.toLocaleString()}</span></div>
                   <div className="flex justify-between text-sm text-slate-400"><span>Allowance / Bonus</span><span className="text-white font-mono">{(selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
                   <div className="h-px bg-white/5 my-4" />
-                  
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Labor Insurance</span><span className="font-mono">-{selectedRecord.details.labor.toLocaleString()}</span></div>
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Health Insurance</span><span className="font-mono">-{selectedRecord.details.health.toLocaleString()}</span></div>
                   <div className="flex justify-between text-xs text-red-400/80 italic"><span>Income Tax</span><span className="font-mono">-{selectedRecord.details.tax.toLocaleString()}</span></div>
-                  
                   <div className="flex justify-between text-2xl font-black text-white pt-6 border-t border-white/5 mt-4">
                     <span>Total Net Pay</span><span className="text-cyan-400 text-3xl font-black">{selectedRecord.details.net.toLocaleString()} TWD</span>
                   </div>
@@ -468,6 +469,148 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
                   </button>
                   <button onClick={generatePDF} className="w-full bg-white/5 hover:bg-white/10 text-slate-300 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all border border-white/5">
                     <Download className="w-5 h-5" /> Download PDF
+                  </button>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- Auditor View ---
+function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack }: { payrollData: any[], walletConnected: boolean, onConnect: () => void, onNavigateBack: () => void }) {
+  const [showDetails, setShowDetails] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+
+  // CSV Export Logic
+  const downloadCSV = () => {
+    const headers = ["Transaction ID", "Employee", "Period", "Base Salary", "Allowances", "Bonus", "Labor Ins.", "Health Ins.", "Tax", "Net Payout", "Status", "Blockchain Hash"];
+    const rows = payrollData.map(r => [
+      r.id, r.empId, r.period, 
+      r.details.base, r.details.allowance, r.details.bonus, 
+      r.details.labor, r.details.health, r.details.tax, 
+      r.details.net, r.status, r.hash
+    ]);
+    
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "Audit_Compliance_Log.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto p-6 animate-in fade-in duration-500 relative">
+      <div className="bg-[#111623] border border-emerald-500/20 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+        {/* Decorative corner glow */}
+        <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-emerald-900/20 rounded-full blur-[80px] pointer-events-none" />
+
+        <div className="flex items-center justify-between mb-8 relative z-10">
+          <div className="flex items-center gap-3">
+             <div className="bg-white/5 p-2 rounded-full cursor-pointer hover:bg-white/10 transition-colors" onClick={onNavigateBack}><ChevronLeft className="text-slate-400"/></div>
+             <div>
+               <h2 className="text-3xl font-extrabold text-white tracking-tight">Compliance & Audit Portal</h2>
+               <p className="text-emerald-400/80 text-sm mt-1">Real-time monitoring of on-chain disbursements.</p>
+             </div>
+          </div>
+          {walletConnected && payrollData.length > 0 && (
+             <button onClick={downloadCSV} className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all">
+               <Download className="w-4 h-4" /> Export CSV Log
+             </button>
+          )}
+        </div>
+
+        {!walletConnected ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Shield className="w-16 h-16 text-slate-600 mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">Auditor Authentication Required</h3>
+            <p className="text-slate-400 mb-8 max-w-md text-center text-sm">Please connect your authorized auditor wallet to inspect cryptographic proofs and compliance records.</p>
+            <button onClick={onConnect} className="w-full max-w-sm bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20">
+              <Wallet className="w-5 h-5"/> Connect Auditor Wallet
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4 relative z-10">
+            {payrollData.length === 0 ? (
+              <div className="border border-dashed border-white/10 p-16 rounded-2xl text-center text-slate-500">
+                <Database className="w-12 h-12 mx-auto mb-4 opacity-20"/>
+                No transaction records found on the ledger.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10 text-slate-400 text-xs uppercase tracking-wider">
+                      <th className="p-4 font-medium">Employee</th>
+                      <th className="p-4 font-medium">Period</th>
+                      <th className="p-4 font-medium">Net Payout (TWD)</th>
+                      <th className="p-4 font-medium">Status</th>
+                      <th className="p-4 font-medium text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payrollData.map(record => (
+                      <tr key={record.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                        <td className="p-4 text-white font-bold">{record.empId}</td>
+                        <td className="p-4 text-slate-300">{record.period}</td>
+                        <td className="p-4 font-mono text-cyan-400">{record.details.net.toLocaleString()}</td>
+                        <td className="p-4">
+                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${record.status === 'Claimed' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                            {record.status}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                           <button onClick={() => { setSelectedRecord(record); setShowDetails(true); }} className="text-emerald-400 hover:text-emerald-300 text-sm font-bold flex items-center gap-1 justify-end w-full">
+                             <Eye className="w-4 h-4" /> Inspect
+                           </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Auditor Detail Modal (Read-Only) */}
+      {showDetails && selectedRecord && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 animate-in fade-in backdrop-blur-sm">
+          <div className="bg-[#0f172a] border border-emerald-500/30 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative">
+             <button onClick={() => setShowDetails(false)} className="absolute top-5 right-5 text-slate-500 hover:text-white transition-colors"><X /></button>
+             
+             <div className="bg-emerald-900/20 p-8 border-b border-emerald-500/20">
+               <h3 className="text-2xl font-black text-white">Cryptographic Proof</h3>
+               <div className="mt-4 flex items-center gap-2 text-sm font-bold text-emerald-400">
+                 <Shield className="w-4 h-4"/> Verified ZK-Rollup Transaction
+               </div>
+               <div className="mt-2 text-[10px] text-slate-500 font-mono break-all bg-black/40 p-2 rounded border border-white/5">
+                 Hash: {selectedRecord.hash}
+               </div>
+             </div>
+             
+             <div className="p-8 space-y-4">
+                <div className="flex justify-between text-sm text-slate-400 border-b border-white/5 pb-2"><span>Employee Identifier</span><span className="text-white font-bold">{selectedRecord.empId}</span></div>
+                <div className="flex justify-between text-sm text-slate-400 border-b border-white/5 pb-2"><span>Disbursement Period</span><span className="text-white">{selectedRecord.period}</span></div>
+                <div className="flex justify-between text-sm text-slate-400 border-b border-white/5 pb-2"><span>Status</span><span className={selectedRecord.status === 'Claimed' ? 'text-green-400' : 'text-amber-400'}>{selectedRecord.status}</span></div>
+                
+                <div className="pt-4 space-y-2">
+                  <div className="flex justify-between text-xs text-slate-500"><span>Gross Allowances</span><span className="font-mono">{(selectedRecord.details.base + selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs text-slate-500"><span>Total Deductions</span><span className="font-mono text-red-400/80">-{ (selectedRecord.details.labor + selectedRecord.details.health + selectedRecord.details.tax).toLocaleString()}</span></div>
+                  <div className="flex justify-between text-lg font-black text-white pt-2">
+                    <span>Net Settled Amount</span><span className="text-emerald-400 font-mono">{selectedRecord.details.net.toLocaleString()} TWD</span>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <button onClick={() => setShowDetails(false)} className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-bold transition-all border border-white/10">
+                    Close Inspector
                   </button>
                 </div>
              </div>
