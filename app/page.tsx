@@ -6,12 +6,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   Shield, Wallet, Building2, User, ChevronRight, CheckCircle, 
   Terminal, Activity, FileText, Globe, Server, Eye, Download, 
-  Loader2, X, ChevronLeft, LogOut, LogIn, Calendar, Hexagon, BadgeCheck, FileSearch, Database
+  Loader2, X, ChevronLeft, LogOut, LogIn, Calendar, Hexagon, BadgeCheck, FileSearch, Database, LockKeyhole
 } from 'lucide-react';
 
 // --- TypeScript Definitions ---
 type UserRole = 'landing' | 'employer' | 'employee' | 'auditor';
 type WalletType = 'metamask' | 'eternl' | 'safe' | '';
+type Lang = 'en' | 'zh';
 
 // --- Mock Data ---
 const EMPLOYEES = [
@@ -20,7 +21,200 @@ const EMPLOYEES = [
   { id: "emp02", name: "Bob", title: "Product Lead", address: "0x3B2...1A9E", base: 90000, allowance: 8000 },
 ];
 
+// --- Translations Dictionary ---
+const T = {
+  en: {
+    navTitle: "On-chain Payroll",
+    privacy: "Privacy Network",
+    mainnet: "Mainnet",
+    connect: "Connect Wallet",
+    langToggle: "繁中",
+    // Landing
+    titlePrefix: "Enterprise-Grade",
+    titleSuffix: "On-Chain Payroll",
+    desc: "Empower your organization with secure, compliant, and confidential salary distribution. Experience the future of Web3 human resources.",
+    empPortal: "Employer Portal",
+    empPortalDesc: "Manage compensation and execute secure payouts.",
+    launch: "Launch Dashboard",
+    employeePortal: "Employee Portal",
+    employeePortalDesc: "Securely log in to claim salary and download official payslips.",
+    claimVerify: "Claim & Verify",
+    auditorPortal: "Auditor Portal",
+    auditorPortalDesc: "Inspect compliance logs and export audit reports.",
+    accessLogs: "Access Logs",
+    // Employer
+    employerTitle: "Private Payroll Disbursement",
+    connectEmp: "Connect Enterprise Wallet",
+    selectEmp: "1. Select Employee",
+    selectPeriod: "2. Select Period",
+    base: "Base Salary (TWD)",
+    allowance: "Allowance",
+    bonus: "Discretionary Bonus",
+    labor: "Labor Insurance",
+    health: "Health Insurance",
+    tax: "Income Tax",
+    net: "Total Net Pay",
+    signSettle: "Sign & Settle",
+    encrypting: "Encrypting Data...",
+    proving: "Generating ZK Proof...",
+    relaying: "Relaying to Network...",
+    settling: "Settling Funds...",
+    complete: "Disbursement Complete",
+    sysAlert: "System Alert",
+    dupAlert: "salary for this period has already been claimed. Duplicate payout rejected.",
+    dismiss: "Dismiss",
+    added: "Disbursement Successful!",
+    updated: "Record Updated!",
+    done: "Done",
+    // Employee
+    employeeTitle: "Employee Portal Access",
+    accId: "Account ID (e.g., Aden)",
+    pwd: "Password",
+    signIn: "Sign In",
+    walletReq: "Wallet ID Required",
+    walletReqDesc: "Please connect your personal wallet to verify identity and unlock your salary claim portal.",
+    connectStd: "Connect Standard Wallet",
+    welcome: "Welcome",
+    dashboard: "Compensation Dashboard",
+    logout: "Secure Logout",
+    empty: "No pending salary disbursements found.",
+    compProof: "Compensation",
+    ready: "Ready to Claim",
+    disbursed: "Disbursed",
+    review: "Review",
+    payslip: "Payslip",
+    verified: "Verified Digital Payslip",
+    claimed: "Funds Disbursed to Wallet",
+    processing: "Processing...",
+    withdraw: "Withdraw Salary",
+    download: "Download PDF",
+    claimConfirmed: "Claim Confirmed!",
+    claimDesc: "Your salary disbursement has been successfully settled to your connected wallet. You can download the receipt from the dashboard.",
+    returnDash: "Return to Dashboard",
+    // Auditor
+    auditTitle: "Compliance & Audit Portal",
+    auditSub: "Real-time monitoring of on-chain disbursements.",
+    exportCsv: "Export CSV Log",
+    auditReq: "Auditor Authentication Required",
+    auditReqDesc: "Please connect your authorized auditor wallet. The system will verify your address against the on-chain Auditor Registry.",
+    connectAudit: "Connect Auditor Wallet",
+    verifyingId: "Verifying On-Chain Identity...",
+    verifyingDesc: "Checking Auditor Registry Smart Contract...",
+    accessGranted: "Access Granted",
+    emptyLedger: "No transaction records found on the ledger.",
+    colEmp: "Employee",
+    colPeriod: "Period",
+    colNet: "Net Payout (TWD)",
+    colStatus: "Status",
+    colAction: "Action",
+    inspect: "Inspect",
+    cryptoProof: "Cryptographic Proof",
+    verifiedZk: "Verified ZK-Rollup Transaction",
+    empId: "Employee Identifier",
+    disbPeriod: "Disbursement Period",
+    gross: "Gross Allowances",
+    deductions: "Total Deductions",
+    netSettled: "Net Settled Amount",
+    closeIns: "Close Inspector"
+  },
+  zh: {
+    navTitle: "鏈上薪資系統",
+    privacy: "隱私網路",
+    mainnet: "主網",
+    connect: "連接錢包",
+    langToggle: "EN",
+    // Landing
+    titlePrefix: "企業級",
+    titleSuffix: "鏈上發薪方案",
+    desc: "透過安全、合規且極具隱私的方式進行薪資發放。體驗 Web3 時代的人力資源管理未來。",
+    empPortal: "雇主發放入口",
+    empPortalDesc: "管理薪資結構並執行安全的鏈上發放。",
+    launch: "進入控制台",
+    employeePortal: "員工提領入口",
+    employeePortalDesc: "安全登入以提領薪資並下載官方薪資證明。",
+    claimVerify: "提領與驗證",
+    auditorPortal: "審計查核入口",
+    auditorPortalDesc: "查核合規紀錄並匯出系統審計報表。",
+    accessLogs: "存取紀錄",
+    // Employer
+    employerTitle: "隱私薪資發放控制台",
+    connectEmp: "連接企業錢包",
+    selectEmp: "1. 選擇員工",
+    selectPeriod: "2. 選擇發放週期",
+    base: "本薪 (TWD)",
+    allowance: "固定津貼",
+    bonus: "浮動獎金",
+    labor: "勞工保險",
+    health: "健康保險",
+    tax: "個人所得稅",
+    net: "實領淨額",
+    signSettle: "簽署與結算",
+    encrypting: "資料加密中...",
+    proving: "產生零知識證明...",
+    relaying: "節點廣播中...",
+    settling: "資金結算中...",
+    complete: "發放完成",
+    sysAlert: "系統攔截",
+    dupAlert: "此週期的薪資已被提領，系統拒絕重複發放。",
+    dismiss: "關閉",
+    added: "薪資發放成功！",
+    updated: "紀錄更新成功！",
+    done: "完成",
+    // Employee
+    employeeTitle: "員工入口登入",
+    accId: "員工帳號 (例如: Aden)",
+    pwd: "登入密碼",
+    signIn: "安全登入",
+    walletReq: "需要錢包驗證",
+    walletReqDesc: "請連接您的個人 Web3 錢包以驗證數位身分並解鎖薪資提領權限。",
+    connectStd: "連接個人錢包",
+    welcome: "歡迎",
+    dashboard: "薪資提領儀表板",
+    logout: "安全登出",
+    empty: "目前沒有待處理的薪資發放紀錄。",
+    compProof: "薪資單",
+    ready: "待提領",
+    disbursed: "已撥款",
+    review: "查看",
+    payslip: "薪資明細",
+    verified: "已驗證的數位薪資單",
+    claimed: "資金已提領至錢包",
+    processing: "區塊鏈處理中...",
+    withdraw: "提領薪資",
+    download: "下載 PDF",
+    claimConfirmed: "提領成功！",
+    claimDesc: "您的薪資已成功結算並轉移至您連接的個人錢包中。您可以從儀表板下載薪資收據。",
+    returnDash: "返回儀表板",
+    // Auditor
+    auditTitle: "財務合規與審計入口",
+    auditSub: "即時監控所有鏈上資金撥款紀錄。",
+    exportCsv: "匯出 CSV 報表",
+    auditReq: "需要審計員身分驗證",
+    auditReqDesc: "請連接授權的審計錢包。系統將會比對鏈上「審計員白名單合約 (Auditor Registry)」進行權限查核。",
+    connectAudit: "連接審計錢包",
+    verifyingId: "鏈上身分驗證中...",
+    verifyingDesc: "正在核對智能合約白名單...",
+    accessGranted: "授權通過",
+    emptyLedger: "分類帳上目前無任何交易紀錄。",
+    colEmp: "員工",
+    colPeriod: "週期",
+    colNet: "實發金額 (TWD)",
+    colStatus: "狀態",
+    colAction: "操作",
+    inspect: "查核",
+    cryptoProof: "密碼學證明",
+    verifiedZk: "已驗證的 ZK-Rollup 交易",
+    empId: "員工識別碼",
+    disbPeriod: "撥款週期",
+    gross: "應發總額",
+    deductions: "代扣總額",
+    netSettled: "鏈上結算淨額",
+    closeIns: "關閉查核視窗"
+  }
+};
+
 export default function OnChainPayrollApp() {
+  const [lang, setLang] = useState<Lang>('en');
   const [currentView, setCurrentView] = useState<UserRole>('landing');
   const [payrollData, setPayrollData] = useState<any[]>([]); 
   const [walletConnected, setWalletConnected] = useState(false);
@@ -29,6 +223,8 @@ export default function OnChainPayrollApp() {
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [duplicateAlert, setDuplicateAlert] = useState<string | null>(null);
+
+  const t = T[lang];
 
   useEffect(() => {
     const savedDB = localStorage.getItem('payrollDB');
@@ -47,7 +243,8 @@ export default function OnChainPayrollApp() {
     setIsConnecting(true);
     setShowWalletModal(false);
     setTimeout(() => {
-      if (type === 'safe') setWalletAddress("eth:0x4A2...MultiSig");
+      // 根據身分模擬不同地址，展示權限差異
+      if (currentView === 'auditor') setWalletAddress("0xAUDIT...4242");
       else if (type === 'metamask') setWalletAddress("0x71C...976F");
       else setWalletAddress("addr_test1...User");
       
@@ -68,15 +265,17 @@ export default function OnChainPayrollApp() {
     disconnectWallet();
   };
 
+  const toggleLang = () => setLang(prev => prev === 'en' ? 'zh' : 'en');
+
   return (
     <div className="min-h-screen bg-[#0a0e17] text-slate-200 font-sans selection:bg-cyan-500/30 pb-20 relative">
       {duplicateAlert && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-[#111623] border border-amber-500/30 w-full max-w-sm rounded-2xl p-8 shadow-2xl text-center">
             <Shield className="w-16 h-16 text-amber-400 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">System Alert</h3>
+            <h3 className="text-xl font-bold text-white mb-2">{t.sysAlert}</h3>
             <p className="text-slate-400 text-sm mb-6 leading-relaxed">{duplicateAlert}</p>
-            <button onClick={() => setDuplicateAlert(null)} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl font-bold transition">Dismiss</button>
+            <button onClick={() => setDuplicateAlert(null)} className="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl font-bold transition">{t.dismiss}</button>
           </div>
         </div>
       )}
@@ -89,18 +288,28 @@ export default function OnChainPayrollApp() {
       <nav className="border-b border-white/5 bg-[#0a0e17]/80 backdrop-blur-md sticky top-0 z-50 h-16 flex items-center justify-between px-6">
         <div className="flex items-center gap-3 cursor-pointer" onClick={navigateToLanding}>
           <div className="bg-gradient-to-br from-cyan-500 to-indigo-600 p-2 rounded-lg"><Hexagon className="w-5 h-5 text-white" /></div>
-          <div className="font-bold text-white text-lg tracking-wide">On-chain Payroll</div>
+          <div className="font-bold text-white text-lg tracking-wide hidden md:block">{t.navTitle}</div>
         </div>
         <div className="flex items-center gap-4">
+          <div className="hidden md:flex gap-3 text-[10px] font-mono border-r border-white/10 pr-4">
+            <div className="flex items-center gap-1 text-slate-400"><span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span> {t.privacy}</div>
+            <div className="flex items-center gap-1 text-slate-400"><span className="w-2 h-2 rounded-full bg-cyan-500"></span> {t.mainnet}</div>
+          </div>
+
+          {/* Language Toggle */}
+          <button onClick={toggleLang} className="text-xs font-bold text-slate-400 hover:text-white px-2 py-1 rounded bg-white/5 border border-white/10 transition-colors">
+            {t.langToggle}
+          </button>
+
           {walletConnected ? (
             <div className="flex items-center gap-2">
-              <div className={`px-4 py-1.5 rounded-full border text-xs font-mono flex items-center gap-2 ${walletType === 'metamask' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : walletType === 'safe' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-blue-500/30 bg-blue-500/10 text-blue-300'}`}><span className="w-2 h-2 bg-green-400 rounded-full"></span>{walletAddress}</div>
+              <div className={`px-4 py-1.5 rounded-full border text-xs font-mono flex items-center gap-2 ${currentView === 'auditor' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : walletType === 'metamask' ? 'border-orange-500/30 bg-orange-500/10 text-orange-400' : 'border-blue-500/30 bg-blue-500/10 text-blue-300'}`}><span className="w-2 h-2 bg-green-400 rounded-full"></span>{walletAddress}</div>
               <button onClick={disconnectWallet} className="p-2 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition"><LogOut className="w-4 h-4" /></button>
             </div>
           ) : (
             currentView !== 'landing' && (
               <button onClick={() => setShowWalletModal(true)} className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-full text-xs font-bold transition flex items-center gap-2">
-                {isConnecting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Wallet className="w-4 h-4" />} Connect Wallet
+                {isConnecting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Wallet className="w-4 h-4" />} {t.connect}
               </button>
             )
           )}
@@ -108,33 +317,18 @@ export default function OnChainPayrollApp() {
       </nav>
 
       <main className="relative z-10">
-        {currentView === 'landing' && <LandingView onNavigate={setCurrentView} />}
-        {currentView === 'employer' && <EmployerView payrollData={payrollData} walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} onPaymentSuccess={addPayrollRecord} onPaymentUpdate={updatePayrollRecord} onSetAlert={setDuplicateAlert} onNavigateBack={navigateToLanding} />}
-        {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} payrollData={payrollData} onWithdraw={markAsWithdrawn} onLogout={navigateToLanding} />}
-        {currentView === 'auditor' && <AuditorView payrollData={payrollData} walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} onNavigateBack={navigateToLanding} />}
+        {currentView === 'landing' && <LandingView onNavigate={setCurrentView} t={t} />}
+        {currentView === 'employer' && <EmployerView payrollData={payrollData} walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} onPaymentSuccess={addPayrollRecord} onPaymentUpdate={updatePayrollRecord} onSetAlert={setDuplicateAlert} onNavigateBack={navigateToLanding} t={t} />}
+        {currentView === 'employee' && <EmployeeView walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} payrollData={payrollData} onWithdraw={markAsWithdrawn} onLogout={navigateToLanding} t={t} />}
+        {currentView === 'auditor' && <AuditorView payrollData={payrollData} walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} onNavigateBack={navigateToLanding} t={t} />}
       </main>
 
-      {/* Wallet Selection Modal */}
       {showWalletModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-[#111623] border border-white/10 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
             <button onClick={() => setShowWalletModal(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X className="w-5 h-5"/></button>
-            <h3 className="text-white font-bold text-center mb-6 text-lg">Select Wallet</h3>
+            <h3 className="text-white font-bold text-center mb-6 text-lg">{lang === 'en' ? 'Select Wallet' : '選擇錢包'}</h3>
             <div className="space-y-3">
-              
-              {currentView === 'employer' && (
-                <>
-                  <button disabled className="w-full bg-emerald-900/5 border border-emerald-500/20 p-4 rounded-xl flex items-center gap-4 cursor-not-allowed opacity-50 relative">
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-emerald-500 uppercase tracking-widest border border-emerald-500/30 px-2 py-1 rounded bg-emerald-500/10">Coming Soon</div>
-                    <div className="w-10 h-10 rounded-full bg-[#111623] flex items-center justify-center overflow-hidden border border-emerald-500/30 p-1">
-                      <img src="/safe.png" alt="Safe" className="w-full h-full object-contain grayscale" />
-                    </div>
-                    <div className="text-left font-bold text-slate-300">Safe (Multi-Sig)</div>
-                  </button>
-                  <div className="flex items-center gap-4 py-1"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Standard Access</span><div className="h-px bg-white/5 flex-1"></div></div>
-                </>
-              )}
-
               <button onClick={() => connectWallet('metamask')} className="w-full bg-white/5 hover:bg-orange-900/20 border border-white/5 p-4 rounded-xl flex items-center gap-4 transition-all group">
                 <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-2">
                   <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-full h-full object-contain" />
@@ -148,7 +342,6 @@ export default function OnChainPayrollApp() {
                 </div>
                 <div className="text-left font-bold text-white group-hover:text-blue-400 transition-colors">Eternl</div>
               </button>
-
             </div>
           </div>
         </div>
@@ -157,24 +350,22 @@ export default function OnChainPayrollApp() {
   );
 }
 
-// --- Landing View ---
-function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
+function LandingView({ onNavigate, t }: { onNavigate: (role: UserRole) => void, t: any }) {
   return (
     <div className="max-w-7xl mx-auto p-6 pt-24 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
       <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-8">
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400">Enterprise-Grade</span><br />On-Chain Payroll
+        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400">{t.titlePrefix}</span><br />{t.titleSuffix}
       </h1>
-      <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-16 leading-relaxed">Empower your organization with secure, compliant, and confidential salary distribution. Experience the future of Web3 human resources.</p>
+      <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-16 leading-relaxed">{t.desc}</p>
       
-      {/* 變更為 3 欄位設計 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
         <button onClick={() => onNavigate('employer')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-cyan-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden shadow-lg">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><Building2 className="w-24 h-24 text-cyan-500" /></div>
           <div className="relative z-10">
             <div className="w-12 h-12 bg-cyan-900/30 rounded-xl flex items-center justify-center mb-4 text-cyan-400 group-hover:scale-110 transition-transform"><Server className="w-6 h-6" /></div>
-            <h2 className="text-2xl font-bold text-white mb-2">Employer Portal</h2>
-            <p className="text-slate-400 text-sm mb-6">Manage compensation and execute secure payouts.</p>
-            <div className="inline-flex items-center text-cyan-400 text-sm font-bold group-hover:gap-2 transition-all">Launch Dashboard <ChevronRight className="w-4 h-4 ml-1" /></div>
+            <h2 className="text-2xl font-bold text-white mb-2">{t.empPortal}</h2>
+            <p className="text-slate-400 text-sm mb-6">{t.empPortalDesc}</p>
+            <div className="inline-flex items-center text-cyan-400 text-sm font-bold group-hover:gap-2 transition-all">{t.launch} <ChevronRight className="w-4 h-4 ml-1" /></div>
           </div>
         </button>
 
@@ -182,20 +373,19 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><User className="w-24 h-24 text-purple-500" /></div>
           <div className="relative z-10">
             <div className="w-12 h-12 bg-purple-900/30 rounded-xl flex items-center justify-center mb-4 text-purple-400 group-hover:scale-110 transition-transform"><Shield className="w-6 h-6" /></div>
-            <h2 className="text-2xl font-bold text-white mb-2">Employee Portal</h2>
-            <p className="text-slate-400 text-sm mb-6">Securely log in to claim salary and download official payslips.</p>
-            <div className="inline-flex items-center text-purple-400 text-sm font-bold group-hover:gap-2 transition-all">Claim & Verify <ChevronRight className="w-4 h-4 ml-1" /></div>
+            <h2 className="text-2xl font-bold text-white mb-2">{t.employeePortal}</h2>
+            <p className="text-slate-400 text-sm mb-6">{t.employeePortalDesc}</p>
+            <div className="inline-flex items-center text-purple-400 text-sm font-bold group-hover:gap-2 transition-all">{t.claimVerify} <ChevronRight className="w-4 h-4 ml-1" /></div>
           </div>
         </button>
 
-        {/* 新增的 Auditor Portal */}
         <button onClick={() => onNavigate('auditor')} className="group relative bg-[#111623] hover:bg-[#161b2c] border border-white/10 hover:border-emerald-500/50 p-8 rounded-3xl transition-all text-left overflow-hidden shadow-lg">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><FileSearch className="w-24 h-24 text-emerald-500" /></div>
           <div className="relative z-10">
             <div className="w-12 h-12 bg-emerald-900/30 rounded-xl flex items-center justify-center mb-4 text-emerald-400 group-hover:scale-110 transition-transform"><Database className="w-6 h-6" /></div>
-            <h2 className="text-2xl font-bold text-white mb-2">Auditor Portal</h2>
-            <p className="text-slate-400 text-sm mb-6">Inspect compliance logs and export audit reports.</p>
-            <div className="inline-flex items-center text-emerald-400 text-sm font-bold group-hover:gap-2 transition-all">Access Logs <ChevronRight className="w-4 h-4 ml-1" /></div>
+            <h2 className="text-2xl font-bold text-white mb-2">{t.auditorPortal}</h2>
+            <p className="text-slate-400 text-sm mb-6">{t.auditorPortalDesc}</p>
+            <div className="inline-flex items-center text-emerald-400 text-sm font-bold group-hover:gap-2 transition-all">{t.accessLogs} <ChevronRight className="w-4 h-4 ml-1" /></div>
           </div>
         </button>
       </div>
@@ -203,8 +393,7 @@ function LandingView({ onNavigate }: { onNavigate: (role: UserRole) => void }) {
   );
 }
 
-// --- Employer View ---
-function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSuccess, onPaymentUpdate, onSetAlert, onNavigateBack }: { payrollData: any[], walletConnected: boolean, onConnect: () => void, onPaymentSuccess: (record: any) => void, onPaymentUpdate: (record: any) => void, onSetAlert: (msg: string | null) => void, onNavigateBack: () => void }) {
+function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSuccess, onPaymentUpdate, onSetAlert, onNavigateBack, t }: any) {
   const [selectedEmpId, setSelectedEmpId] = useState('');
   const [period, setPeriod] = useState(''); 
   const [bonus, setBonus] = useState(0);
@@ -222,7 +411,7 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
     if (!walletConnected) { onConnect(); return; }
     const existing = payrollData.find(r => r.empId === selectedEmpId && r.period === period);
     if (existing && existing.status === 'Claimed') {
-      onSetAlert(`Employee ${selectedEmpId}'s salary for ${period} has already been claimed. You cannot disburse a duplicate payment.`);
+      onSetAlert(`Employee ${selectedEmpId}'s ${t.dupAlert}`);
       return;
     }
     
@@ -253,48 +442,51 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
         <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm p-4">
             <div className="bg-[#111623] border border-green-500/50 p-8 rounded-3xl shadow-2xl text-center w-full max-w-sm">
                 <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4 animate-bounce" />
-                <h2 className="text-2xl font-black text-white mb-2">{successType === 'Added' ? 'Disbursement Successful!' : 'Record Updated!'}</h2>
+                <h2 className="text-2xl font-black text-white mb-2">{successType === 'Added' ? t.added : t.updated}</h2>
                 <p className="text-slate-400 mb-6 text-sm">Period: {period}<br/>Data encrypted and synced to the privacy layer.</p>
-                <button onClick={() => { setShowSuccess(false); setStep(0); setSelectedEmpId(''); setPeriod(''); setBonus(0); }} className="w-full bg-green-600 hover:bg-green-500 text-white py-2.5 rounded-xl font-bold">Done</button>
+                <button onClick={() => { setShowSuccess(false); setStep(0); setSelectedEmpId(''); setPeriod(''); setBonus(0); }} className="w-full bg-green-600 hover:bg-green-500 text-white py-2.5 rounded-xl font-bold">{t.done}</button>
             </div>
         </div>
       )}
       <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl shadow-2xl">
         <div className="flex items-center gap-3 mb-6">
            <div className="bg-white/5 p-2 rounded-full cursor-pointer" onClick={onNavigateBack}><ChevronLeft className="text-slate-400"/></div>
-           <h2 className="text-2xl font-extrabold text-white">Private Payroll Disbursement</h2>
+           <h2 className="text-2xl font-extrabold text-white">{t.employerTitle}</h2>
         </div>
         <div className="space-y-6">
-          {!walletConnected && <button onClick={onConnect} className="w-full bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-xl text-cyan-400 font-bold flex justify-center gap-2 transition-all"><Wallet /> Connect Enterprise Wallet</button>}
+          {!walletConnected && <button onClick={onConnect} className="w-full bg-cyan-900/20 border border-cyan-500/30 p-4 rounded-xl text-cyan-400 font-bold flex justify-center gap-2 transition-all"><Wallet /> {t.connectEmp}</button>}
           <div className="grid grid-cols-2 gap-4">
-              <select className="bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-cyan-500 cursor-pointer" value={selectedEmpId} onChange={(e) => setSelectedEmpId(e.target.value)}>
-                  <option value="">Select Employee...</option>
-                  {EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.name} - {e.title}</option>)}
-              </select>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">{t.selectEmp}</label>
+                <select className="bg-black/40 border border-white/10 rounded-xl p-4 w-full text-white outline-none focus:border-cyan-500 cursor-pointer" value={selectedEmpId} onChange={(e) => setSelectedEmpId(e.target.value)}>
+                    <option value="">Choose...</option>
+                    {EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.name} - {e.title}</option>)}
+                </select>
+              </div>
               <div className="relative">
+                  <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">{t.selectPeriod}</label>
                   <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-cyan-500"/>
-                  <Calendar className="absolute right-4 top-4 text-slate-500 w-5 h-5 pointer-events-none"/>
               </div>
           </div>
           {emp && (
             <div className="bg-slate-900/50 rounded-xl p-6 border border-white/10 animate-in zoom-in">
               <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm text-slate-400"><span>Base Salary (TWD)</span><span className="text-white font-mono">{emp.base.toLocaleString()}</span></div>
-                <div className="flex justify-between text-sm text-slate-400"><span>Allowance</span><span className="text-white font-mono">{emp.allowance.toLocaleString()}</span></div>
-                <div className="flex justify-between items-center text-sm pt-2 border-t border-white/5"><span>Discretionary Bonus</span><input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} className="bg-black/60 border border-white/10 rounded px-2 py-1 text-right text-white w-24 outline-none"/></div>
+                <div className="flex justify-between text-sm text-slate-400"><span>{t.base}</span><span className="text-white font-mono">{emp.base.toLocaleString()}</span></div>
+                <div className="flex justify-between text-sm text-slate-400"><span>{t.allowance}</span><span className="text-white font-mono">{emp.allowance.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center text-sm pt-2 border-t border-white/5"><span>{t.bonus}</span><input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} className="bg-black/60 border border-white/10 rounded px-2 py-1 text-right text-white w-24 outline-none"/></div>
               </div>
               <div className="space-y-2 border-t border-white/5 pt-4">
-                <div className="flex justify-between text-sm text-red-400/80"><span>Labor Insurance</span><span>-{laborFee.toLocaleString()}</span></div>
-                <div className="flex justify-between text-sm text-red-400/80"><span>Health Insurance</span><span>-{healthFee.toLocaleString()}</span></div>
-                <div className="flex justify-between text-sm text-red-400/80"><span>Income Tax</span><span>-{taxFee.toLocaleString()}</span></div>
+                <div className="flex justify-between text-sm text-red-400/80"><span>{t.labor}</span><span>-{laborFee.toLocaleString()}</span></div>
+                <div className="flex justify-between text-sm text-red-400/80"><span>{t.health}</span><span>-{healthFee.toLocaleString()}</span></div>
+                <div className="flex justify-between text-sm text-red-400/80"><span>{t.tax}</span><span>-{taxFee.toLocaleString()}</span></div>
               </div>
-              <div className="flex justify-between items-center text-lg font-black pt-4 border-t border-white/10 mt-4"><span>Total Net Pay</span><span className="text-cyan-400 text-3xl font-black">{totalNet.toLocaleString()} TWD</span></div>
+              <div className="flex justify-between items-center text-lg font-black pt-4 border-t border-white/10 mt-4"><span>{t.net}</span><span className="text-cyan-400 text-3xl font-black">{totalNet.toLocaleString()} TWD</span></div>
             </div>
           )}
           <button onClick={handleExecute} disabled={!selectedEmpId || !period || (step > 0 && step < 5)} className={`w-full py-4 rounded-xl font-black text-lg transition-all flex justify-center items-center gap-2 ${(!selectedEmpId || !period) ? 'bg-slate-800 text-slate-500' : step === 5 ? 'bg-green-600 text-white' : step > 0 ? 'bg-indigo-600 text-white' : 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white'}`}>
-            {step === 0 && <><Activity /> Sign & Settle</>}
-            {step > 0 && step < 5 && <><Loader2 className="animate-spin" /> {step === 1 ? 'Encrypting Data...' : step === 2 ? 'Generating ZK Proof...' : step === 3 ? 'Relaying to Network...' : 'Settling Funds...'}</>}
-            {step === 5 && <><CheckCircle /> Disbursement Complete</>}
+            {step === 0 && <><Activity /> {t.signSettle}</>}
+            {step > 0 && step < 5 && <><Loader2 className="animate-spin" /> {step === 1 ? t.encrypting : step === 2 ? t.proving : step === 3 ? t.relaying : t.settling}</>}
+            {step === 5 && <><CheckCircle /> {t.complete}</>}
           </button>
         </div>
       </div>
@@ -302,8 +494,7 @@ function EmployerView({ payrollData, walletConnected, onConnect, onPaymentSucces
   );
 }
 
-// --- Employee View ---
-function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onLogout }: { walletConnected: boolean, onConnect: () => void, payrollData: any[], onWithdraw: (id: number) => void, onLogout: () => void }) {
+function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onLogout, t }: any) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginId, setLoginId] = useState('');
   const [showDetails, setShowDetails] = useState(false);
@@ -314,7 +505,7 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (loginId === 'Aden') setIsLoggedIn(true);
-    else alert("Invalid Account ID. (Hint: Use 'Aden')");
+    else alert("Invalid ID");
   };
 
   const handleWithdrawAction = (id: number) => {
@@ -333,11 +524,11 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
           <div className="bg-[#111623] border border-white/10 p-8 rounded-3xl text-center shadow-xl relative">
             <button onClick={onLogout} className="absolute top-6 left-6 text-slate-500 hover:text-white"><ChevronLeft/></button>
             <div className="w-16 h-16 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-400"><LogIn className="w-8 h-8"/></div>
-            <h2 className="text-2xl font-bold text-white mb-6">Employee Portal Access</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">{t.employeeTitle}</h2>
             <form onSubmit={handleLogin} className="space-y-4">
-              <input type="text" placeholder="Account ID (e.g., Aden)" value={loginId} onChange={e => setLoginId(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-indigo-500"/>
-              <input type="password" placeholder="Password" className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-indigo-500"/>
-              <button type="submit" disabled={!loginId} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition">Sign In</button>
+              <input type="text" placeholder={t.accId} value={loginId} onChange={e => setLoginId(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-indigo-500"/>
+              <input type="password" placeholder={t.pwd} className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white outline-none focus:border-indigo-500"/>
+              <button type="submit" disabled={!loginId} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition">{t.signIn}</button>
             </form>
           </div>
         </div>
@@ -350,9 +541,9 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
         <div className="bg-[#111623] border border-orange-500/30 p-8 rounded-3xl text-center shadow-xl relative">
           <button onClick={onLogout} className="absolute top-6 left-6 text-slate-500 hover:text-white"><ChevronLeft/></button>
           <div className="w-16 h-16 bg-orange-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-orange-400"><Wallet className="w-8 h-8"/></div>
-          <h2 className="text-2xl font-bold text-white mb-2">Wallet ID Required</h2>
-          <p className="text-slate-400 mb-8 text-sm">Hello Aden! Please connect your personal wallet to verify identity and unlock your salary claim portal.</p>
-          <button onClick={onConnect} className="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">Connect Standard Wallet</button>
+          <h2 className="text-2xl font-bold text-white mb-2">{t.walletReq}</h2>
+          <p className="text-slate-400 mb-8 text-sm">{t.walletReqDesc}</p>
+          <button onClick={onConnect} className="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2">{t.connectStd}</button>
         </div>
       </div>
     );
@@ -389,39 +580,38 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
 
   return (
     <div className="max-w-4xl mx-auto p-6 animate-in fade-in duration-500 relative">
-      {/* Withdraw Success Modal */}
       {showWithdrawSuccessModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-in zoom-in duration-300">
           <div className="bg-[#111623] border border-green-500/30 p-10 rounded-3xl text-center shadow-xl w-full max-w-sm">
             <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-6 animate-bounce"/>
-            <h2 className="text-3xl font-black text-white mb-2 tracking-tighter">Claim Confirmed!</h2>
-            <p className="text-slate-400 text-sm mb-10 leading-relaxed">Your salary disbursement has been successfully settled to your connected wallet. You can download the receipt from the dashboard.</p>
-            <button onClick={() => setShowWithdrawSuccessModal(false)} className="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-bold transition shadow-lg shadow-green-900/30">Return to Dashboard</button>
+            <h2 className="text-3xl font-black text-white mb-2 tracking-tighter">{t.claimConfirmed}</h2>
+            <p className="text-slate-400 text-sm mb-10 leading-relaxed">{t.claimDesc}</p>
+            <button onClick={() => setShowWithdrawSuccessModal(false)} className="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-bold transition">{t.returnDash}</button>
           </div>
         </div>
       )}
 
       <div className="flex items-center justify-between mb-8">
-        <div><h2 className="text-3xl font-extrabold text-white">Welcome, Aden</h2><p className="text-slate-500 text-sm mt-1">Operation Intern | Compensation Dashboard</p></div>
-        <button onClick={onLogout} className="text-xs text-slate-500 hover:text-white border-b border-slate-700 pb-1">Logout</button>
+        <div><h2 className="text-3xl font-extrabold text-white">{t.welcome}, Aden</h2><p className="text-slate-500 text-sm mt-1">Operation Intern | {t.dashboard}</p></div>
+        <button onClick={onLogout} className="text-xs text-slate-500 hover:text-white border-b border-slate-700 pb-1">{t.logout}</button>
       </div>
 
       <div className="space-y-4">
         {myRecords.length === 0 ? (
-          <div className="bg-[#111623] border border-dashed border-white/5 p-16 rounded-3xl text-center text-slate-600"><FileText className="w-12 h-12 mx-auto mb-4 opacity-20"/>No pending salary disbursements found.</div>
+          <div className="bg-[#111623] border border-dashed border-white/5 p-16 rounded-3xl text-center text-slate-600"><FileText className="w-12 h-12 mx-auto mb-4 opacity-20"/>{t.empty}</div>
         ) : (
           myRecords.map(record => (
             <div key={record.id} className="bg-[#111623] border border-white/5 p-6 rounded-2xl flex items-center justify-between group shadow-lg">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-slate-500"><FileText/></div>
-                <div><div className="text-white font-bold text-lg">{record.period} Compensation</div><div className="text-[10px] text-slate-500 font-mono">Hash: {record.hash}</div></div>
+                <div><div className="text-white font-bold text-lg">{record.period} {t.compProof}</div><div className="text-[10px] text-slate-500 font-mono">Hash: {record.hash}</div></div>
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-white font-mono">{record.details.net.toLocaleString()}</div>
-                <div className={`text-[10px] uppercase font-black mt-1 ${record.status === 'Claimed' ? 'text-green-500' : 'text-amber-500'}`}>{record.status === 'Claimed' ? 'Disbursed' : 'Ready to Claim'}</div>
+                <div className={`text-[10px] uppercase font-black mt-1 ${record.status === 'Claimed' ? 'text-green-500' : 'text-amber-500'}`}>{record.status === 'Claimed' ? t.disbursed : t.ready}</div>
               </div>
               <div className="ml-6 border-l border-white/5 pl-6">
-                <button onClick={() => { setSelectedRecord(record); setShowDetails(true); }} className="bg-white/5 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition"><Eye className="w-4 h-4" /> Review</button>
+                <button onClick={() => { setSelectedRecord(record); setShowDetails(true); }} className="bg-white/5 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition"><Eye className="w-4 h-4" /> {t.review}</button>
               </div>
             </div>
           ))
@@ -434,23 +624,25 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
              <button onClick={() => setShowDetails(false)} className="absolute top-5 right-5 text-slate-500 hover:text-white transition-colors"><X /></button>
              
              <div className="bg-indigo-900/20 p-8 border-b border-white/5">
-               <h3 className="text-3xl font-black text-white">{selectedRecord.period} Payslip</h3>
+               <h3 className="text-3xl font-black text-white">{selectedRecord.period} {t.payslip}</h3>
                <div className={`mt-4 flex items-center gap-2 text-sm font-bold ${selectedRecord.status === 'Claimed' ? 'text-green-400' : 'text-indigo-400'}`}>
                  {selectedRecord.status === 'Claimed' ? <BadgeCheck className="w-4 h-4"/> : <Shield className="w-4 h-4"/>}
-                 {selectedRecord.status === 'Claimed' ? 'Funds Disbursed to Wallet' : 'Verified Digital Payslip'}
+                 {selectedRecord.status === 'Claimed' ? t.claimed : t.verified}
                </div>
              </div>
              
              <div className="p-8 space-y-6">
                 <div className="space-y-3">
-                  <div className="flex justify-between text-sm text-slate-400"><span>Base Salary (TWD)</span><span className="text-white font-mono">{selectedRecord.details.base.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-sm text-slate-400"><span>Allowance / Bonus</span><span className="text-white font-mono">{(selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-slate-400"><span>{t.base}</span><span className="text-white font-mono">{selectedRecord.details.base.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-sm text-slate-400"><span>{t.allowance} / {t.bonus}</span><span className="text-white font-mono">{(selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
                   <div className="h-px bg-white/5 my-4" />
-                  <div className="flex justify-between text-xs text-red-400/80 italic"><span>Labor Insurance</span><span className="font-mono">-{selectedRecord.details.labor.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs text-red-400/80 italic"><span>Health Insurance</span><span className="font-mono">-{selectedRecord.details.health.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs text-red-400/80 italic"><span>Income Tax</span><span className="font-mono">-{selectedRecord.details.tax.toLocaleString()}</span></div>
+                  
+                  <div className="flex justify-between text-xs text-red-400/80 italic"><span>{t.labor}</span><span className="font-mono">-{selectedRecord.details.labor.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs text-red-400/80 italic"><span>{t.health}</span><span className="font-mono">-{selectedRecord.details.health.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs text-red-400/80 italic"><span>{t.tax}</span><span className="font-mono">-{selectedRecord.details.tax.toLocaleString()}</span></div>
+                  
                   <div className="flex justify-between text-2xl font-black text-white pt-6 border-t border-white/5 mt-4">
-                    <span>Total Net Pay</span><span className="text-cyan-400 text-3xl font-black">{selectedRecord.details.net.toLocaleString()} TWD</span>
+                    <span>{t.net}</span><span className="text-cyan-400 text-3xl font-black">{selectedRecord.details.net.toLocaleString()} TWD</span>
                   </div>
                 </div>
 
@@ -465,10 +657,10 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
                     }`}
                   >
                     {processingId === selectedRecord.id ? <Loader2 className="animate-spin" /> : selectedRecord.status === 'Claimed' ? <CheckCircle className="text-green-500" /> : <Wallet />}
-                    {processingId === selectedRecord.id ? 'Processing...' : selectedRecord.status === 'Claimed' ? 'Claimed' : 'Withdraw Salary'}
+                    {processingId === selectedRecord.id ? t.processing : selectedRecord.status === 'Claimed' ? t.claimed : t.withdraw}
                   </button>
                   <button onClick={generatePDF} className="w-full bg-white/5 hover:bg-white/10 text-slate-300 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all border border-white/5">
-                    <Download className="w-5 h-5" /> Download PDF
+                    <Download className="w-5 h-5" /> {t.download}
                   </button>
                 </div>
              </div>
@@ -480,11 +672,24 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
 }
 
 // --- Auditor View ---
-function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack }: { payrollData: any[], walletConnected: boolean, onConnect: () => void, onNavigateBack: () => void }) {
+function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack, t }: any) {
   const [showDetails, setShowDetails] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  
+  // Simulation for On-Chain ID Verification
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [authSuccess, setAuthSuccess] = useState(false);
 
-  // CSV Export Logic
+  useEffect(() => {
+    if (walletConnected && !authSuccess) {
+      setIsVerifying(true);
+      setTimeout(() => {
+        setIsVerifying(false);
+        setAuthSuccess(true);
+      }, 1500); // Simulate Smart Contract checking
+    }
+  }, [walletConnected, authSuccess]);
+
   const downloadCSV = () => {
     const headers = ["Transaction ID", "Employee", "Period", "Base Salary", "Allowances", "Bonus", "Labor Ins.", "Health Ins.", "Tax", "Net Payout", "Status", "Blockchain Hash"];
     const rows = payrollData.map(r => [
@@ -493,7 +698,6 @@ function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack }
       r.details.labor, r.details.health, r.details.tax, 
       r.details.net, r.status, r.hash
     ]);
-    
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -507,50 +711,59 @@ function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack }
   return (
     <div className="max-w-5xl mx-auto p-6 animate-in fade-in duration-500 relative">
       <div className="bg-[#111623] border border-emerald-500/20 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
-        {/* Decorative corner glow */}
         <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-emerald-900/20 rounded-full blur-[80px] pointer-events-none" />
 
         <div className="flex items-center justify-between mb-8 relative z-10">
           <div className="flex items-center gap-3">
              <div className="bg-white/5 p-2 rounded-full cursor-pointer hover:bg-white/10 transition-colors" onClick={onNavigateBack}><ChevronLeft className="text-slate-400"/></div>
              <div>
-               <h2 className="text-3xl font-extrabold text-white tracking-tight">Compliance & Audit Portal</h2>
-               <p className="text-emerald-400/80 text-sm mt-1">Real-time monitoring of on-chain disbursements.</p>
+               <h2 className="text-3xl font-extrabold text-white tracking-tight">{t.auditTitle}</h2>
+               <p className="text-emerald-400/80 text-sm mt-1">{t.auditSub}</p>
              </div>
           </div>
-          {walletConnected && payrollData.length > 0 && (
+          {authSuccess && payrollData.length > 0 && (
              <button onClick={downloadCSV} className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all">
-               <Download className="w-4 h-4" /> Export CSV Log
+               <Download className="w-4 h-4" /> {t.exportCsv}
              </button>
           )}
         </div>
 
         {!walletConnected ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Shield className="w-16 h-16 text-slate-600 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Auditor Authentication Required</h3>
-            <p className="text-slate-400 mb-8 max-w-md text-center text-sm">Please connect your authorized auditor wallet to inspect cryptographic proofs and compliance records.</p>
+          <div className="flex flex-col items-center justify-center py-12 animate-in zoom-in">
+            <LockKeyhole className="w-16 h-16 text-slate-600 mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">{t.auditReq}</h3>
+            <p className="text-slate-400 mb-8 max-w-md text-center text-sm">{t.auditReqDesc}</p>
             <button onClick={onConnect} className="w-full max-w-sm bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20">
-              <Wallet className="w-5 h-5"/> Connect Auditor Wallet
+              <Wallet className="w-5 h-5"/> {t.connectAudit}
             </button>
           </div>
+        ) : isVerifying ? (
+          <div className="flex flex-col items-center justify-center py-20 animate-in fade-in">
+            <Loader2 className="w-16 h-16 text-emerald-500 animate-spin mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">{t.verifyingId}</h3>
+            <p className="text-emerald-400/60 font-mono text-sm">{t.verifyingDesc}</p>
+          </div>
         ) : (
-          <div className="space-y-4 relative z-10">
+          <div className="space-y-4 relative z-10 animate-in fade-in">
+            <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 mb-6 w-fit">
+              <CheckCircle className="w-4 h-4"/> {t.accessGranted}
+            </div>
+
             {payrollData.length === 0 ? (
               <div className="border border-dashed border-white/10 p-16 rounded-2xl text-center text-slate-500">
                 <Database className="w-12 h-12 mx-auto mb-4 opacity-20"/>
-                No transaction records found on the ledger.
+                {t.emptyLedger}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/10 text-slate-400 text-xs uppercase tracking-wider">
-                      <th className="p-4 font-medium">Employee</th>
-                      <th className="p-4 font-medium">Period</th>
-                      <th className="p-4 font-medium">Net Payout (TWD)</th>
-                      <th className="p-4 font-medium">Status</th>
-                      <th className="p-4 font-medium text-right">Action</th>
+                      <th className="p-4 font-medium">{t.colEmp}</th>
+                      <th className="p-4 font-medium">{t.colPeriod}</th>
+                      <th className="p-4 font-medium">{t.colNet}</th>
+                      <th className="p-4 font-medium">{t.colStatus}</th>
+                      <th className="p-4 font-medium text-right">{t.colAction}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -561,12 +774,12 @@ function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack }
                         <td className="p-4 font-mono text-cyan-400">{record.details.net.toLocaleString()}</td>
                         <td className="p-4">
                           <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${record.status === 'Claimed' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
-                            {record.status}
+                            {record.status === 'Claimed' ? t.disbursed : t.ready}
                           </span>
                         </td>
                         <td className="p-4 text-right">
                            <button onClick={() => { setSelectedRecord(record); setShowDetails(true); }} className="text-emerald-400 hover:text-emerald-300 text-sm font-bold flex items-center gap-1 justify-end w-full">
-                             <Eye className="w-4 h-4" /> Inspect
+                             <Eye className="w-4 h-4" /> {t.inspect}
                            </button>
                         </td>
                       </tr>
@@ -579,16 +792,15 @@ function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack }
         )}
       </div>
 
-      {/* Auditor Detail Modal (Read-Only) */}
       {showDetails && selectedRecord && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 animate-in fade-in backdrop-blur-sm">
           <div className="bg-[#0f172a] border border-emerald-500/30 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative">
              <button onClick={() => setShowDetails(false)} className="absolute top-5 right-5 text-slate-500 hover:text-white transition-colors"><X /></button>
              
              <div className="bg-emerald-900/20 p-8 border-b border-emerald-500/20">
-               <h3 className="text-2xl font-black text-white">Cryptographic Proof</h3>
+               <h3 className="text-2xl font-black text-white">{t.cryptoProof}</h3>
                <div className="mt-4 flex items-center gap-2 text-sm font-bold text-emerald-400">
-                 <Shield className="w-4 h-4"/> Verified ZK-Rollup Transaction
+                 <Shield className="w-4 h-4"/> {t.verifiedZk}
                </div>
                <div className="mt-2 text-[10px] text-slate-500 font-mono break-all bg-black/40 p-2 rounded border border-white/5">
                  Hash: {selectedRecord.hash}
@@ -596,21 +808,21 @@ function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack }
              </div>
              
              <div className="p-8 space-y-4">
-                <div className="flex justify-between text-sm text-slate-400 border-b border-white/5 pb-2"><span>Employee Identifier</span><span className="text-white font-bold">{selectedRecord.empId}</span></div>
-                <div className="flex justify-between text-sm text-slate-400 border-b border-white/5 pb-2"><span>Disbursement Period</span><span className="text-white">{selectedRecord.period}</span></div>
-                <div className="flex justify-between text-sm text-slate-400 border-b border-white/5 pb-2"><span>Status</span><span className={selectedRecord.status === 'Claimed' ? 'text-green-400' : 'text-amber-400'}>{selectedRecord.status}</span></div>
+                <div className="flex justify-between text-sm text-slate-400 border-b border-white/5 pb-2"><span>{t.empId}</span><span className="text-white font-bold">{selectedRecord.empId}</span></div>
+                <div className="flex justify-between text-sm text-slate-400 border-b border-white/5 pb-2"><span>{t.disbPeriod}</span><span className="text-white">{selectedRecord.period}</span></div>
+                <div className="flex justify-between text-sm text-slate-400 border-b border-white/5 pb-2"><span>{t.colStatus}</span><span className={selectedRecord.status === 'Claimed' ? 'text-green-400' : 'text-amber-400'}>{selectedRecord.status === 'Claimed' ? t.disbursed : t.ready}</span></div>
                 
                 <div className="pt-4 space-y-2">
-                  <div className="flex justify-between text-xs text-slate-500"><span>Gross Allowances</span><span className="font-mono">{(selectedRecord.details.base + selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs text-slate-500"><span>Total Deductions</span><span className="font-mono text-red-400/80">-{ (selectedRecord.details.labor + selectedRecord.details.health + selectedRecord.details.tax).toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs text-slate-500"><span>{t.gross}</span><span className="font-mono">{(selectedRecord.details.base + selectedRecord.details.allowance + selectedRecord.details.bonus).toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs text-slate-500"><span>{t.deductions}</span><span className="font-mono text-red-400/80">-{ (selectedRecord.details.labor + selectedRecord.details.health + selectedRecord.details.tax).toLocaleString()}</span></div>
                   <div className="flex justify-between text-lg font-black text-white pt-2">
-                    <span>Net Settled Amount</span><span className="text-emerald-400 font-mono">{selectedRecord.details.net.toLocaleString()} TWD</span>
+                    <span>{t.netSettled}</span><span className="text-emerald-400 font-mono">{selectedRecord.details.net.toLocaleString()} TWD</span>
                   </div>
                 </div>
 
                 <div className="mt-8">
                   <button onClick={() => setShowDetails(false)} className="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded-xl font-bold transition-all border border-white/10">
-                    Close Inspector
+                    {t.closeIns}
                   </button>
                 </div>
              </div>
