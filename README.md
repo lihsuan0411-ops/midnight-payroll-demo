@@ -1,65 +1,72 @@
-# On-chain Payroll: A ZK Privacy System 🌑
+# On-Chain Payroll 
 
-![Project Status](https://img.shields.io/badge/Status-Milestone_3_Complete-success)
-![Catalyst ID](https://img.shields.io/badge/Catalyst_ID-111124-blue)
-![Tech](https://img.shields.io/badge/Stack-Midnight_ZK_%7C_Cardano_%7C_Next.js-black)
+**Enterprise-Grade Privacy-Preserving Salary Distribution System**  
+**企業級隱私鏈上薪資發放系統 (MVP)**
 
-## 📖 Project Overview
-This project is a **Selective Disclosure payroll system** built for the Cardano & Midnight ecosystem. 
-It solves the conflict between **enterprise privacy (GDPR)** and **on-chain transparency**.
+![Version](https://img.shields.io/badge/Version-MVP_1.0-blue)
+![Tech Stack](https://img.shields.io/badge/Tech-Next.js_%7C_Tailwind-black)
+![Web3](https://img.shields.io/badge/Web3-Ready-emerald)
 
-### 💡 Core Value Proposition
-1.  **Privacy Calculation**: Midnight ZK contracts execute private salary logic (bonuses, levels).
-2.  **Public Settlement**: Cardano settles the final funds via a **Relay Oracle**.
-3.  **Selective Disclosure**: Employees can use **View Keys** to prove income to banks/auditors without revealing the company's entire payroll structure.
+## Project Overview (專案簡介)
+On-Chain Payroll is a next-generation HR and financial compliance platform built for the Web3 era. It leverages blockchain technology to ensure secure, immutable, and privacy-preserving salary disbursements while providing seamless auditing interfaces for traditional finance and government entities.
+
+本專案是一個專為 Web3 時代打造的新世代企業薪資發放與財務合規平台。透過區塊鏈技術，確保薪資發放的安全、不可竄改與隱私保護，同時為傳統金融與政府審計機關提供完美的查核介面。
+
+## Core Portals (三大核心入口)
+
+### 1.Employer Portal (雇主發放控制台)
+* **Private Disbursement:** Execute bulk salary payouts with strict access control.
+* **Locked Billing Cycles:** System-locked payroll periods to prevent manipulation.
+* **Immutable Records:** Generates cryptographic proofs (simulated ZK-proofs) for every transaction.
+
+### 2.Employee Portal (員工提領入口)
+* **Web3 Login:** Passwordless authentication using standard Web3 wallets (MetaMask, Eternl).
+* **Fund Claiming:** Securely withdraw net payouts directly to personal wallets.
+* **Digital Payslips:** Download officially verified, auto-calculated PDF payslips (Base, Allowance, Tax, Insurance).
+
+### 3.Auditor & Compliance Portal (財務合規與審計入口)
+* **Read-Only Ledger:** Complete transparency for authorized auditor wallets.
+* **Granular Inspection:** Detailed breakdown of every transaction's gross and deduction amounts.
+* **Export & API Vision:** 1-click CSV export, with reserved API gateways for **Commercial Banks (Loans)** and **Gov/CPA (Taxation)**.
+
+## System Architecture (系統運作流程)
+```mermaid
+graph TD
+    %% Define Styles
+    classDef employer fill:#1e3a8a,stroke:#3b82f6,stroke-width:2px,color:#fff
+    classDef employee fill:#4c1d95,stroke:#8b5cf6,stroke-width:2px,color:#fff
+    classDef auditor fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff
+    classDef contract fill:#0f172a,stroke:#22d3ee,stroke-width:2px,color:#22d3ee
+    classDef ledger fill:#0f172a,stroke:#f59e0b,stroke-width:2px,color:#f59e0b
+
+    %% Actors
+    Employer([🏢 Employer]) ::: employer
+    Employee([👤 Employee]) ::: employee
+    Auditor([⚖️ Auditor / Banks / Gov]) ::: auditor
+
+    %% Core System (Web3)
+    subgraph Web3 Privacy Network
+        Contract{Escrow Smart Contract} ::: contract
+        Ledger[(Immutable Ledger)] ::: ledger
+    end
+
+    %% Employer Flow
+    Employer -->|1. Setup Payroll & Lock Funds| Contract
+    
+    %% Employee Flow
+    Employee -->|2. Authenticate Wallet| Contract
+    Contract -->|3. Auto-Disburse Net Pay| Employee
+    Employee -.->|4. Download Verified PDF| Local[Local Device]
+    
+    %% Auditor Flow
+    Contract ==>|Log ZK-Proof Hash| Ledger
+    Auditor -->|5. Verify On-Chain Identity| Ledger
+    Ledger -->|6. Export CSV / API Sync| Auditor
+
+## Roadmap (未來藍圖)
+1. **Smart Contract Integration:** Transition from LocalStorage to real Escrow Smart Contracts.
+2. **Privacy Network Deployment:** Deploy on privacy-preserving sidechains (e.g., Midnight) to shield specific salary amounts from the public public block explorer.
+3. **B2B / B2G API Implementation:** Unlock the "Coming Soon" gateways to allow seamless real-world asset (RWA) scoring by banks and tax verification by authorities.
 
 ---
-
-## 🚀 Features (Milestone #3 Deliverables)
-
-### 1. Employer Portal (Issuer)
-* **Real Wallet Integration**: Supports **Lace** and **Eternl** (CIP-30).
-* **Privacy Execution**: Simulates the encryption -> ZK-Proof -> Relay Oracle -> Settlement flow.
-* **GDPR Compliance**: Visual indicators ensuring data masking.
-
-### 2. Employee Portal (Verifier)
-* **View Key Decryption**: Users connect wallets to decrypt sensitive salary data.
-* **Payslip Management**: Detailed breakdown of Base Salary, Allowance, and Bonus.
-* **Audit Export**: One-click generation of income proof for third-party verification.
-
----
-
-## 🛠️ Tech Stack & Architecture
-
-* **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS
-* **Blockchain Integration**: 
-    * `window.cardano` API for wallet connection.
-    * Mocked Midnight Compact Circuit interaction (for MVP).
-* **Security**: Non-custodial session management, auto-disconnect logic.
-
----
-
-## 📦 How to Run Locally
-
-1.  **Clone the repo**
-    ```bash
-    git clone [https://github.com/YOUR_GITHUB_ACCOUNT/midnight-payroll-demo.git](https://github.com/YOUR_GITHUB_ACCOUNT/midnight-payroll-demo.git)
-    ```
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
-3.  **Start the server**
-    ```bash
-    npm run dev
-    ```
-4.  **Access**: Open `http://localhost:3000`
-
----
-
-## 🔗 Delivery Evidence
-* **Live Demo**: [https://midnight-payroll-demo.vercel.app/](https://midnight-payroll-demo.vercel.app/)
-* **Final Report**: See `Final-Report.pdf` (submitted separately).
-
----
-*MIT License • 2025 Midnight Catalyst Project*
+*Built for the future of decentralized organizations.*
