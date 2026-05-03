@@ -29,7 +29,8 @@ On-Chain Payroll is a next-generation HR and financial compliance platform built
 * **Granular Inspection:** Detailed breakdown of every transaction's gross and deduction amounts.
 * **Export & API Vision:** 1-click CSV export, with reserved API gateways for **Commercial Banks (Loans)** and **Gov/CPA (Taxation)**.
 
-## System Architecture (系統運作流程)
+## 🔄 System Architecture (系統運作流程)
+
 ```mermaid
 graph TD
     %% Define Styles
