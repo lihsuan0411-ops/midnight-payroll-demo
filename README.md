@@ -29,7 +29,7 @@ On-Chain Payroll is a next-generation HR and financial compliance platform built
 * **Granular Inspection:** Detailed breakdown of every transaction's gross and deduction amounts.
 * **Export & API Vision:** 1-click CSV export, with reserved API gateways for **Commercial Banks (Loans)** and **Gov/CPA (Taxation)**.
 
-## 🔄 System Architecture (系統運作流程)
+## System Architecture (系統運作流程)
 
 ```mermaid
 graph TD
@@ -41,28 +41,35 @@ graph TD
     classDef ledger fill:#0f172a,stroke:#f59e0b,stroke-width:2px,color:#f59e0b
 
     %% Actors
-    Employer([🏢 Employer]) ::: employer
-    Employee([👤 Employee]) ::: employee
-    Auditor([⚖️ Auditor / Banks / Gov]) ::: auditor
+    Employer(["🏢 Employer"])
+    Employee(["👤 Employee"])
+    Auditor(["⚖️ Auditor / Banks / Gov"])
 
     %% Core System (Web3)
-    subgraph Web3 Privacy Network
-        Contract{Escrow Smart Contract} ::: contract
-        Ledger[(Immutable Ledger)] ::: ledger
+    subgraph Web3 ["Web3 Privacy Network"]
+        Contract{"Escrow Smart Contract"}
+        Ledger[("Immutable Ledger")]
     end
 
+    %% Apply Styles Safely
+    class Employer employer
+    class Employee employee
+    class Auditor auditor
+    class Contract contract
+    class Ledger ledger
+
     %% Employer Flow
-    Employer -->|1. Setup Payroll & Lock Funds| Contract
+    Employer -->|"1. Setup Payroll & Lock Funds"| Contract
     
     %% Employee Flow
-    Employee -->|2. Authenticate Wallet| Contract
-    Contract -->|3. Auto-Disburse Net Pay| Employee
-    Employee -.->|4. Download Verified PDF| Local[Local Device]
+    Employee -->|"2. Authenticate Wallet"| Contract
+    Contract -->|"3. Auto-Disburse Net Pay"| Employee
+    Employee -.->|"4. Download Verified PDF"| Local["Local Device"]
     
     %% Auditor Flow
-    Contract ==>|Log ZK-Proof Hash| Ledger
-    Auditor -->|5. Verify On-Chain Identity| Ledger
-    Ledger -->|6. Export CSV / API Sync| Auditor
+    Contract ==>|"Log ZK-Proof Hash"| Ledger
+    Auditor -->|"5. Verify On-Chain Identity"| Ledger
+    Ledger -->|"6. Export CSV / API Sync"| Auditor
 
 ## Roadmap (未來藍圖)
 1. **Smart Contract Integration:** Transition from LocalStorage to real Escrow Smart Contracts.
