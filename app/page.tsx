@@ -6,27 +6,200 @@ import React, { useState, useEffect } from 'react';
 import { 
   Shield, Wallet, Building2, User, ChevronRight, CheckCircle, 
   Activity, FileText, Server, Eye, Download, 
-  Loader2, X, ChevronLeft, LogOut, LogIn, Hexagon, BadgeCheck, FileSearch, Database, LockKeyhole
+  Loader2, X, ChevronLeft, LogOut, LogIn, Hexagon, BadgeCheck, FileSearch, Database, LockKeyhole, Landmark
 } from 'lucide-react';
 
 type UserRole = 'landing' | 'employer' | 'employee' | 'auditor';
 type WalletType = 'metamask' | 'eternl' | 'safe' | '';
 type Lang = 'en' | 'zh';
 
-// 1. 員工名單已徹底更新為 Alice 與 Bob
 const EMPLOYEES = [
   { id: "Aden", name: "Aden", title: "Operation Intern", address: "0x9E3...4A21", base: 40000, allowance: 2000 },
   { id: "Alice", name: "Alice", title: "Senior Dev", address: "0x71C...976F", base: 75000, allowance: 5000 },
   { id: "Bob", name: "Bob", title: "Product Lead", address: "0x3B2...1A9E", base: 90000, allowance: 8000 },
 ];
 
-// 2. 翻譯包 (已移除所有 Aden 提示文字)
 const T = {
-  en: { navTitle: "On-Chain Payroll", connect: "Connect Wallet", langToggle: "繁中", comingSoon: "Coming Soon", bankApi: "Bank API (Loan / Audit)", web3Standard: "Web3 Standard", titlePrefix: "Enterprise-Grade", titleSuffix: "On-Chain Payroll", desc: "Empower your organization with secure, compliant, and confidential salary distribution. Experience the future of Web3 human resources.", empPortal: "Employer Portal", empPortalDesc: "Manage compensation and execute secure payouts.", launch: "Launch Dashboard", employeePortal: "Employee Portal", employeePortalDesc: "Securely log in to claim salary and download official payslips.", claimVerify: "Claim & Verify", auditorPortal: "Auditor Portal", auditorPortalDesc: "Inspect compliance logs and export audit reports.", accessLogs: "Access Logs", employerTitle: "Private Payroll Disbursement", connectEmp: "Connect Enterprise Wallet", selectEmp: "1. Select Employee", currentPeriod: "2. Current Period (Locked)", base: "Base Salary (TWD)", allowance: "Allowance", bonus: "Discretionary Bonus", labor: "Labor Insurance", health: "Health Insurance", tax: "Income Tax", net: "Total Net Pay", signSettle: "Sign & Settle", encrypting: "Encrypting Data...", proving: "Generating ZK Proof...", relaying: "Relaying to Network...", settling: "Settling Funds...", complete: "Disbursement Complete", sysAlert: "System Alert", dupAlert: "salary for this period has already been claimed.", dismiss: "Dismiss", added: "Disbursement Successful!", updated: "Record Updated!", done: "Done", employeeTitle: "Employee Portal Access", accId: "Account ID", pwd: "Password", signIn: "Sign In", walletReq: "Wallet ID Required", walletReqDesc: "Please connect your personal wallet to verify identity and unlock your salary claim portal.", connectStd: "Connect Standard Wallet", welcome: "Welcome", dashboard: "Compensation Dashboard", logout: "Secure Logout", empty: "No pending salary disbursements found.", compProof: "Compensation", ready: "Ready to Claim", disbursed: "Disbursed", review: "Review", payslip: "Payslip", verified: "Verified Digital Payslip", claimed: "Funds Disbursed to Wallet", processing: "Processing...", withdraw: "Withdraw Salary", download: "Download PDF", claimConfirmed: "Claim Confirmed!", claimDesc: "Your salary disbursement has been successfully settled to your connected wallet. You can download the receipt from the dashboard.", returnDash: "Return to Dashboard", auditTitle: "Compliance & Audit Portal", auditSub: "Real-time monitoring of on-chain disbursements.", exportCsv: "Export CSV Log", auditReq: "Auditor Authentication Required", auditReqDesc: "Please connect your authorized auditor wallet. The system will verify your address against the on-chain Auditor Registry.", connectAudit: "Connect Auditor Wallet", verifyingId: "Verifying Identity...", verifyingDesc: "Checking Auditor Registry...", accessGranted: "Access Granted", emptyLedger: "No transaction records found on the ledger.", colEmp: "Employee", colPeriod: "Period", colNet: "Net Payout", colStatus: "Status", colAction: "Action", inspect: "Inspect", cryptoProof: "Cryptographic Proof", verifiedZk: "Verified ZK-Rollup Transaction", empId: "Employee Identifier", disbPeriod: "Disbursement Period", closeIns: "Close Inspector" },
-  zh: { navTitle: "鏈上薪資系統", connect: "連接錢包", langToggle: "EN", comingSoon: "待推出", bankApi: "民間銀行 API (貸款/聯徵)", web3Standard: "Web3 標準協議", titlePrefix: "企業級", titleSuffix: "鏈上發薪方案", desc: "透過安全、合規且極具隱私的方式進行薪資發放。體驗 Web3 時代的人力資源管理未來。", empPortal: "雇主發放入口", empPortalDesc: "管理薪資結構並執行安全的鏈上發放。", launch: "進入控制台", employeePortal: "員工提領入口", employeePortalDesc: "安全登入以提領薪資並下載官方薪資證明。", claimVerify: "提領與驗證", auditorPortal: "審計查核入口", auditorPortalDesc: "查核合規紀錄並匯出系統審計報表。", accessLogs: "查閱紀錄", employerTitle: "隱私薪資發放控制台", connectEmp: "連接企業錢包", selectEmp: "1. 選擇員工", currentPeriod: "2. 當前週期 (系統鎖定)", base: "本薪 (TWD)", allowance: "固定津貼", bonus: "浮動獎金", labor: "勞工保險", health: "健康保險", tax: "個人所得稅", net: "實領淨額", signSettle: "簽署與結算", encrypting: "資料加密中...", proving: "產生零知識證明...", relaying: "節點廣播中...", settling: "資金結算中...", complete: "發放完成", sysAlert: "系統提示", dupAlert: "此週期的薪資已被提領，系統拒絕重複發放。", dismiss: "關閉", added: "薪資發放成功！", updated: "紀錄更新成功！", done: "完成", employeeTitle: "員工入口登入", accId: "員工帳號", pwd: "登入密碼", signIn: "安全登入", walletReq: "需要錢包驗證", walletReqDesc: "請連接您的個人 Web3 錢包以驗證數位身分並解鎖薪提領權限。", connectStd: "連接個人錢包", welcome: "歡迎", dashboard: "薪資提領儀表板", logout: "安全登出", empty: "目前沒有待處理的薪資發放紀錄。", compProof: "薪資單", ready: "待提領", disbursed: "已撥款", review: "查看", payslip: "薪資明細", verified: "已驗證的數位薪資單", claimed: "資金已提領至錢包", processing: "區塊鏈處理中...", withdraw: "提領薪資", download: "下載 PDF", claimConfirmed: "提領成功！", claimDesc: "您的薪資已成功結算並轉移至您連接的個人錢包中。您可以從儀表板下載薪資收據。", returnDash: "返回儀表板", auditTitle: "財務合規與審計入口", auditSub: "即時監控所有鏈上資金撥款紀錄。", exportCsv: "匯出 CSV 報表", auditReq: "需要審計員身分驗證", auditReqDesc: "請連接授權的審計錢包。系統將會比對鏈上「審計員白名單合約」進行權限查核。", connectAudit: "連接審計錢包", verifyingId: "鏈上身分驗證中...", verifyingDesc: "正在核對智能合約白名單...", accessGranted: "授權通過", emptyLedger: "目前分類帳無交易紀錄。", colEmp: "員工", colPeriod: "週期", colNet: "實發金額", colStatus: "狀態", colAction: "操作", inspect: "查核", cryptoProof: "密碼學證明", verifiedZk: "已驗證的 ZK-Rollup 交易", empId: "員工識別碼", disbPeriod: "撥款週期", closeIns: "關閉視窗" }
+  en: {
+    navTitle: "On-Chain Payroll",
+    connect: "Connect Wallet",
+    langToggle: "繁中",
+    comingSoon: "Coming Soon",
+    bankApi: "Bank API (Loan / Audit)",
+    govCpaApi: "Gov / CPA API (Tax / Audit)",
+    web3Standard: "Web3 Standard",
+    titlePrefix: "Enterprise-Grade",
+    titleSuffix: "On-Chain Payroll",
+    desc: "Empower your organization with secure, compliant, and confidential salary distribution. Experience the future of Web3 human resources.",
+    empPortal: "Employer Portal",
+    empPortalDesc: "Manage compensation and execute secure payouts.",
+    launch: "Launch Dashboard",
+    employeePortal: "Employee Portal",
+    employeePortalDesc: "Securely log in to claim salary and download official payslips.",
+    claimVerify: "Claim & Verify",
+    auditorPortal: "Auditor Portal",
+    auditorPortalDesc: "Inspect compliance logs and export audit reports.",
+    accessLogs: "Access Logs",
+    employerTitle: "Private Payroll Disbursement",
+    connectEmp: "Connect Enterprise Wallet",
+    selectEmp: "1. Select Employee",
+    currentPeriod: "2. Current Period (Locked)",
+    base: "Base Salary (TWD)",
+    allowance: "Allowance",
+    bonus: "Discretionary Bonus",
+    labor: "Labor Insurance",
+    health: "Health Insurance",
+    tax: "Income Tax",
+    net: "Total Net Pay",
+    signSettle: "Sign & Settle",
+    encrypting: "Encrypting Data...",
+    proving: "Generating ZK Proof...",
+    relaying: "Relaying to Network...",
+    settling: "Settling Funds...",
+    complete: "Disbursement Complete",
+    sysAlert: "System Alert",
+    dupAlert: "salary for this period has already been claimed.",
+    dismiss: "Dismiss",
+    added: "Disbursement Successful!",
+    updated: "Record Updated!",
+    done: "Done",
+    employeeTitle: "Employee Portal Access",
+    accId: "Account ID",
+    pwd: "Password",
+    signIn: "Sign In",
+    walletReq: "Wallet ID Required",
+    walletReqDesc: "Please connect your personal wallet to verify identity and unlock your salary claim portal.",
+    connectStd: "Connect Standard Wallet",
+    welcome: "Welcome",
+    dashboard: "Compensation Dashboard",
+    logout: "Secure Logout",
+    empty: "No pending salary disbursements found.",
+    compProof: "Compensation",
+    ready: "Ready to Claim",
+    disbursed: "Disbursed",
+    review: "Review",
+    payslip: "Payslip",
+    verified: "Verified Digital Payslip",
+    claimed: "Funds Disbursed to Wallet",
+    processing: "Processing...",
+    withdraw: "Withdraw Salary",
+    download: "Download PDF",
+    claimConfirmed: "Claim Confirmed!",
+    claimDesc: "Your salary disbursement has been successfully settled to your connected wallet. You can download the receipt from the dashboard.",
+    returnDash: "Return to Dashboard",
+    auditTitle: "Compliance & Audit Portal",
+    auditSub: "Real-time monitoring of on-chain disbursements.",
+    exportCsv: "Export CSV Log",
+    auditReq: "Auditor Authentication Required",
+    auditReqDesc: "Please connect your authorized auditor wallet. The system will verify your address against the on-chain Auditor Registry.",
+    connectAudit: "Connect Auditor Wallet",
+    verifyingId: "Verifying Identity...",
+    verifyingDesc: "Checking Auditor Registry...",
+    accessGranted: "Access Granted",
+    emptyLedger: "No transaction records found on the ledger.",
+    colEmp: "Employee",
+    colPeriod: "Period",
+    colNet: "Net Payout",
+    colStatus: "Status",
+    colAction: "Action",
+    inspect: "Inspect",
+    cryptoProof: "Cryptographic Proof",
+    verifiedZk: "Verified ZK-Rollup Transaction",
+    empId: "Employee Identifier",
+    disbPeriod: "Disbursement Period",
+    closeIns: "Close Inspector"
+  },
+  zh: {
+    navTitle: "鏈上薪資系統",
+    connect: "連接錢包",
+    langToggle: "EN",
+    comingSoon: "待推出",
+    bankApi: "民間銀行 API (貸款/聯徵)",
+    govCpaApi: "政府/事務所 API (報稅/合規)",
+    web3Standard: "Web3 標準協議",
+    titlePrefix: "企業級",
+    titleSuffix: "鏈上發薪方案",
+    desc: "透過安全、合規且極具隱私的方式進行薪資發放。體驗 Web3 時代的人力資源管理未來。",
+    empPortal: "雇主發放入口",
+    empPortalDesc: "管理薪資結構並執行安全的鏈上發放。",
+    launch: "進入控制台",
+    employeePortal: "員工提領入口",
+    employeePortalDesc: "安全登入以提領薪資並下載官方薪資證明。",
+    claimVerify: "提領與驗證",
+    auditorPortal: "審計查核入口",
+    auditorPortalDesc: "查核合規紀錄並匯出系統審計報表。",
+    accessLogs: "查閱紀錄",
+    employerTitle: "隱私薪資發放控制台",
+    connectEmp: "連接企業錢包",
+    selectEmp: "1. 選擇員工",
+    currentPeriod: "2. 當前週期 (系統鎖定)",
+    base: "本薪 (TWD)",
+    allowance: "固定津貼",
+    bonus: "浮動獎金",
+    labor: "勞工保險",
+    health: "健康保險",
+    tax: "個人所得稅",
+    net: "實領淨額",
+    signSettle: "簽署與結算",
+    encrypting: "資料加密中...",
+    proving: "產生零知識證明...",
+    relaying: "節點廣播中...",
+    settling: "資金結算中...",
+    complete: "發放完成",
+    sysAlert: "系統提示",
+    dupAlert: "此週期的薪資已被提領，系統拒絕重複發放。",
+    dismiss: "關閉",
+    added: "薪資發放成功！",
+    updated: "紀錄更新成功！",
+    done: "完成",
+    employeeTitle: "員工入口登入",
+    accId: "員工帳號",
+    pwd: "登入密碼",
+    signIn: "安全登入",
+    walletReq: "需要錢包驗證",
+    walletReqDesc: "請連接您的個人 Web3 錢包以驗證數位身分並解鎖薪資提領權限。",
+    connectStd: "連接個人錢包",
+    welcome: "歡迎",
+    dashboard: "薪資提領儀表板",
+    logout: "安全登出",
+    empty: "目前沒有待處理的薪資發放紀錄。",
+    compProof: "薪資單",
+    ready: "待提領",
+    disbursed: "已撥款",
+    review: "查看",
+    payslip: "薪資明細",
+    verified: "已驗證的數位薪資單",
+    claimed: "資金已提領至錢包",
+    processing: "區塊鏈處理中...",
+    withdraw: "提領薪資",
+    download: "下載 PDF",
+    claimConfirmed: "提領成功！",
+    claimDesc: "您的薪資已成功結算並轉移至您連接的個人錢包中。您可以從儀表板下載薪資收據。",
+    returnDash: "返回儀表板",
+    auditTitle: "財務合規與審計入口",
+    auditSub: "即時監控所有鏈上資金撥款紀錄。",
+    exportCsv: "匯出 CSV 報表",
+    auditReq: "需要審計員身分驗證",
+    auditReqDesc: "請連接授權的審計錢包。系統將會比對鏈上「審計員白名單合約」進行權限查核。",
+    connectAudit: "連接審計錢包",
+    verifyingId: "鏈上身分驗證中...",
+    verifyingDesc: "正在核對智能合約白名單...",
+    accessGranted: "授權通過",
+    emptyLedger: "目前分類帳無交易紀錄。",
+    colEmp: "員工",
+    colPeriod: "週期",
+    colNet: "實發金額",
+    colStatus: "狀態",
+    colAction: "操作",
+    inspect: "查核",
+    cryptoProof: "密碼學證明",
+    verifiedZk: "已驗證的 ZK-Rollup 交易",
+    empId: "員工識別碼",
+    disbPeriod: "撥款週期",
+    closeIns: "關閉視窗"
+  }
 };
 
-// --- Logo 組件 ---
 function BrandLogo() {
   return (
     <div className="flex items-center gap-3 group">
@@ -145,51 +318,60 @@ export default function OnChainPayrollApp() {
         {currentView === 'auditor' && <AuditorView payrollData={payrollData} walletConnected={walletConnected} onConnect={() => setShowWalletModal(true)} onNavigateBack={navigateToLanding} t={t} />}
       </main>
 
-      {/* Wallet Selection Modal (直接使用你 public 資料夾中的圖片) */}
+      {/* Wallet Selection Modal */}
       {showWalletModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-[#111623] border border-white/10 w-full max-w-sm rounded-3xl p-8 shadow-2xl relative shadow-blue-900/10">
             <button onClick={() => setShowWalletModal(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X className="w-5 h-5"/></button>
             <h3 className="text-white font-black text-center mb-8 text-xl tracking-tight">{lang === 'en' ? 'Select Wallet' : '選擇授權錢包'}</h3>
-            <div className="space-y-4">
+            <div className="space-y-3">
               
               {currentView === 'employer' && (
                 <>
-                  <button disabled className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl flex items-center gap-4 cursor-not-allowed opacity-40 relative group">
-                    <div className="absolute right-4 top-4 text-[8px] font-black text-slate-400 uppercase tracking-widest border border-white/10 px-2 py-1 rounded bg-white/5">{t.comingSoon}</div>
-                    <div className="w-12 h-12 rounded-full bg-[#0a0e17] flex items-center justify-center overflow-hidden border border-white/10 p-1 grayscale">
-                      {/* 直接讀取 public/safe.png */}
+                  <button disabled className="w-full bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center gap-4 cursor-not-allowed opacity-40 relative group">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-400 uppercase tracking-widest border border-white/10 px-2 py-1 rounded bg-white/5">{t.comingSoon}</div>
+                    <div className="w-10 h-10 rounded-full bg-[#0a0e17] flex items-center justify-center overflow-hidden border border-white/10 p-1 grayscale">
                       <img src="/safe.png" alt="Safe" className="w-full h-full object-cover" />
                     </div>
                     <div className="text-left font-bold text-slate-300">Safe (M-of-N)</div>
                   </button>
-                  <div className="flex items-center gap-4 py-1"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-600 font-black uppercase tracking-widest">{t.web3Standard}</span><div className="h-px bg-white/5 flex-1"></div></div>
+                  <div className="flex items-center gap-4 py-2"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-600 font-black uppercase tracking-widest">{t.web3Standard}</span><div className="h-px bg-white/5 flex-1"></div></div>
                 </>
               )}
 
               {currentView === 'auditor' && (
                 <>
-                  <button disabled className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl flex items-center gap-4 cursor-not-allowed opacity-40 relative group">
-                    <div className="absolute right-4 top-4 text-[8px] font-black text-slate-400 uppercase tracking-widest border border-white/10 px-2 py-1 rounded bg-white/5">{t.comingSoon}</div>
-                    <div className="w-12 h-12 rounded-full bg-[#0a0e17] flex items-center justify-center overflow-hidden border border-white/10 p-2.5">
+                  {/* Bank API Button */}
+                  <button disabled className="w-full bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center gap-4 cursor-not-allowed opacity-40 relative group">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-400 uppercase tracking-widest border border-white/10 px-2 py-1 rounded bg-white/5">{t.comingSoon}</div>
+                    <div className="w-10 h-10 rounded-full bg-[#0a0e17] flex items-center justify-center overflow-hidden border border-white/10 p-2.5">
                       <Building2 className="w-full h-full text-slate-400" />
                     </div>
-                    <div className="text-left font-bold text-slate-300">{t.bankApi}</div>
+                    <div className="text-left font-bold text-slate-300 text-sm">{t.bankApi}</div>
                   </button>
-                  <div className="flex items-center gap-4 py-1"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-600 font-black uppercase tracking-widest">{t.web3Standard}</span><div className="h-px bg-white/5 flex-1"></div></div>
+
+                  {/* Gov / CPA API Button */}
+                  <button disabled className="w-full bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center gap-4 cursor-not-allowed opacity-40 relative group mt-3">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[8px] font-black text-slate-400 uppercase tracking-widest border border-white/10 px-2 py-1 rounded bg-white/5">{t.comingSoon}</div>
+                    <div className="w-10 h-10 rounded-full bg-[#0a0e17] flex items-center justify-center overflow-hidden border border-white/10 p-2.5">
+                      <Landmark className="w-full h-full text-slate-400" />
+                    </div>
+                    <div className="text-left font-bold text-slate-300 text-sm">{t.govCpaApi}</div>
+                  </button>
+
+                  <div className="flex items-center gap-4 py-2 mt-2"><div className="h-px bg-white/5 flex-1"></div><span className="text-[10px] text-slate-600 font-black uppercase tracking-widest">{t.web3Standard}</span><div className="h-px bg-white/5 flex-1"></div></div>
                 </>
               )}
 
-              <button onClick={() => connectWallet('metamask')} className="w-full bg-white/5 hover:bg-orange-900/20 border border-white/5 hover:border-orange-500/40 p-5 rounded-2xl flex items-center gap-4 transition-all group active:scale-[0.98]">
-                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center p-2.5 group-hover:bg-white/10 transition-colors">
+              <button onClick={() => connectWallet('metamask')} className="w-full bg-white/5 hover:bg-orange-900/20 border border-white/5 hover:border-orange-500/40 p-4 rounded-2xl flex items-center gap-4 transition-all group active:scale-[0.98]">
+                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center p-2 group-hover:bg-white/10 transition-colors">
                   <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-full h-full object-contain" />
                 </div>
                 <div className="text-left font-bold text-white group-hover:text-orange-400 transition-colors">MetaMask</div>
               </button>
               
-              <button onClick={() => connectWallet('eternl')} className="w-full bg-white/5 hover:bg-blue-900/20 border border-white/5 hover:border-blue-500/40 p-5 rounded-2xl flex items-center gap-4 transition-all group active:scale-[0.98]">
-                <div className="w-12 h-12 rounded-xl bg-[#0a0e17] flex items-center justify-center overflow-hidden border border-blue-500/30 p-0.5 group-hover:bg-blue-900/20 transition-colors">
-                  {/* 直接讀取 public/eternl.png */}
+              <button onClick={() => connectWallet('eternl')} className="w-full bg-white/5 hover:bg-blue-900/20 border border-white/5 hover:border-blue-500/40 p-4 rounded-2xl flex items-center gap-4 transition-all group active:scale-[0.98]">
+                <div className="w-10 h-10 rounded-xl bg-[#0a0e17] flex items-center justify-center overflow-hidden border border-blue-500/30 p-0.5 group-hover:bg-blue-900/20 transition-colors">
                   <img src="/eternl.png" alt="Eternl" className="w-full h-full object-cover rounded-lg" />
                 </div>
                 <div className="text-left font-bold text-white group-hover:text-blue-400 transition-colors">Eternl</div>
@@ -359,7 +541,6 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [showWithdrawSuccessModal, setShowWithdrawSuccessModal] = useState(false);
 
-  // 1. 支援所有員工登入，不分大小寫
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const foundEmp = EMPLOYEES.find(emp => emp.id.toLowerCase() === loginId.toLowerCase());
@@ -389,7 +570,6 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
             <div className="w-20 h-20 bg-purple-600/10 rounded-3xl flex items-center justify-center mx-auto mb-8 text-purple-400 border border-purple-500/20 shadow-inner"><LogIn className="w-10 h-10"/></div>
             <h2 className="text-3xl font-black text-white mb-8 tracking-tight">{t.employeeTitle}</h2>
             <form onSubmit={handleLogin} className="space-y-6">
-              {/* 2. 登入提示文字已徹底乾淨化 */}
               <input type="text" placeholder={t.accId} value={loginId} onChange={e => setLoginId(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-white outline-none focus:border-purple-500 font-medium"/>
               <input type="password" placeholder={t.pwd} className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-white outline-none focus:border-purple-500 font-medium"/>
               <button type="submit" disabled={!loginId} className="w-full bg-purple-600 hover:bg-purple-500 text-white py-4 rounded-2xl font-black tracking-widest uppercase transition-all shadow-lg active:scale-95">{t.signIn}</button>
@@ -451,7 +631,7 @@ function EmployeeView({ walletConnected, onConnect, payrollData, onWithdraw, onL
             <CheckCircle className="w-20 h-20 text-green-400 mx-auto mb-8 animate-bounce"/>
             <h2 className="text-3xl font-black text-white mb-4 tracking-tight">{t.claimConfirmed}</h2>
             <p className="text-slate-400 text-sm mb-12 leading-relaxed font-medium">{t.claimDesc}</p>
-            <button onClick={() => setShowWithdrawSuccessModal(false)} className="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-2xl font-black tracking-widest uppercase shadow-lg active:scale-95">{t.returnDash}</button>
+            <button onClick={() => setShowWithdrawSuccessModal(false)} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black tracking-widest uppercase shadow-lg active:scale-95">{t.returnDash}</button>
           </div>
         </div>
       )}
@@ -672,7 +852,6 @@ function AuditorView({ payrollData, walletConnected, onConnect, onNavigateBack, 
                </div>
              </div>
              
-             {/* 審計端細節：逐條查核薪資與扣除額 */}
              <div className="p-10 space-y-5">
                 <div className="flex justify-between text-xs font-black uppercase tracking-widest text-slate-500 border-b border-white/5 pb-3"><span>{t.empId}</span><span className="text-white font-black">{selectedRecord.empId}</span></div>
                 <div className="flex justify-between text-xs font-black uppercase tracking-widest text-slate-500 border-b border-white/5 pb-3"><span>{t.disbPeriod}</span><span className="text-white">{selectedRecord.period}</span></div>
